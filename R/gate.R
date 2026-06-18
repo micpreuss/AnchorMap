@@ -2,8 +2,11 @@
 # Ports anchor_categories.py:apply_universe_gate (L77-102) and attach_ontology (L105-124).
 
 # Per-row reliability gate + per-trait anchoring statistics. `z` here is the h2-reliability
-# threshold (h2_z = h2_trait / h2_trait_se), NOT a trait-relevance cut.
-apply_universe_gate <- function(df, cfg) {
+# threshold (h2_z = h2_trait / h2_trait_se), NOT a trait-relevance cut. `z` overrides
+# cfg$h2_z_threshold for the Phase-3 sensitivity sweep; when NULL the config value is used
+# (so Phase-1/2 callers are unaffected).
+apply_universe_gate <- function(df, cfg, z = NULL) {
+  z <- if (is.null(z)) as.numeric(cfg[["h2_z_threshold"]]) else as.numeric(z)
   m <- df[["trait_group"]] == cfg[["trait_group"]] &
        df[["status"]] == "success" &
        !is.na(df[["rg"]]) & !is.na(df[["rg_se"]]) & df[["rg_se"]] > 0 &
@@ -15,7 +18,7 @@ apply_universe_gate <- function(df, cfg) {
 
   g <- df[m, , drop = FALSE]
   g[["h2_z"]] <- g[["h2_trait"]] / g[["h2_trait_se"]]
-  g <- g[g[["h2_z"]] > as.numeric(cfg[["h2_z_threshold"]]), , drop = FALSE]
+  g <- g[g[["h2_z"]] > z, , drop = FALSE]
 
   rg_c <- pmin(pmax(g[["rg"]], -0.999), 0.999)          # clip for the Fisher-z transform
   g[["abs_rg"]] <- abs(g[["rg"]])

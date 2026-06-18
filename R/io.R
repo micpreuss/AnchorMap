@@ -23,7 +23,11 @@ default_config <- function() {
     # cluster_factor_pattern / cluster_factors: how the .rds route splits factors vs panel traits.
     # rds / rds_trait_meta: optional GenomicSEM .rds input route + its trait_id->trait_category map.
     vif_coverage_min = 0.5, cluster_factor_pattern = "^C[0-9]", cluster_factors = NULL,
-    rds = NULL, rds_trait_meta = NULL)
+    rds = NULL, rds_trait_meta = NULL,
+    # ---- Phase 3 (additive) ----
+    # z_vector: the h2-reliability thresholds swept for the sensitivity TSVs. The primary z
+    # (h2_z_threshold) is always folded in, so the primary slice always exists.
+    z_vector = c(3, 4, 5))
 }
 
 # Read a YAML config and overlay it on the defaults. `levels` is flattened to a character vector.
@@ -31,7 +35,8 @@ load_config <- function(path) {
   cfg <- yaml::read_yaml(path)
   dflt <- default_config()
   for (k in names(dflt)) if (is.null(cfg[[k]])) cfg[[k]] <- dflt[[k]]
-  cfg[["levels"]] <- as.character(unlist(cfg[["levels"]]))
+  cfg[["levels"]]   <- as.character(unlist(cfg[["levels"]]))
+  cfg[["z_vector"]] <- as.numeric(unlist(cfg[["z_vector"]]))
   cfg
 }
 

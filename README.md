@@ -22,8 +22,9 @@ not unit tests alone.
 
 ## Status
 
-**Phases 1–2 complete — the R engine is a validated drop-in for the Python reference and ingests a
-GenomicSEM `.rds` directly.** Later phases are designed in the ADD but not yet built:
+**Phases 1–3 complete — the R engine is a validated drop-in for the Python reference, ingests a
+GenomicSEM `.rds` directly, and runs a parallel reliability-threshold sensitivity sweep.** Later
+phases are designed in the ADD but not yet built:
 
 1. **Phase 1 — R engine port + fixture** ✅ — `R/` + [anchor_map.R](anchor_map.R), validated by
    cross-language parity on the anthro + disease tracks.
@@ -33,8 +34,16 @@ GenomicSEM `.rds` directly.** Later phases are designed in the ADD but not yet b
    `vif_correlation: auto` redundancy auto-fallback (trait×trait → cluster-profile proxy → `VIF=1`).
    Validated by [tests/test_phase2.R](tests/test_phase2.R) (delta-method numeric-diff, `.rds`↔TSV
    round-trip, fallback branches, VIF-invariance); Phase-1 oracle parity preserved byte-for-byte.
-3. **Phase 3 — sensitivity + parallelism** *(designed)* — parallel z-threshold sweep and multi-CPU
-   `perm_p` via `future`.
+3. **Phase 3 — sensitivity + parallelism** ✅ — parallel h²-reliability **z-sweep**
+   ([R/sensitivity.R](R/sensitivity.R)): `run_sensitivity` re-runs the whole engine at each z in
+   `cfg$z_vector` (default `{3,4,5}`, the primary z always folded in) in parallel via `future.apply`,
+   emitting `sensitivity_z_scores.tsv` + `sensitivity_z_labels.tsv` (with a per-cluster `label_stable`
+   flag) alongside the unchanged primaries. `--z-vector` / `--threads` on the CLI. Validated by
+   [tests/test_phase3.R](tests/test_phase3.R) (primary-slice parity incl. `perm_p`, thread-invariance,
+   `label_stable`, gate monotonicity). Determinism is engineered: each z-task re-seeds with
+   `random_seed` **and pins the RNG kind to Mersenne-Twister** (`future.seed` flips it to L'Ecuyer),
+   so the z = `h2_z_threshold` slice is byte-identical to the Phase-1/2 single-z primaries and the
+   sweep is thread-count- and backend-invariant; `perm_p` stays serial to protect that parity.
 4. **Phase 4 — visualization** *(designed)* — publication-ready figures (lollipop small-multiples,
    cluster×category dot-heatmap, AUC-vs-coherence diagnostic, cross-cluster specificity heatmap +
    diagonal) via `R/plot.R` (ggplot2), config-driven and headless, from the scored TSVs.
@@ -65,7 +74,11 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendo
     vif, auc_abs, auc_signed, perm_p, vif_z, vif_p, pooled_rg [ci], coherence, odds_ratio, fisher_p, q, rank`.
   - `cluster_anchor_labels.tsv` — per cluster: `auto_label, anchor_shape, anchor_margin, anchor_focus,
     n_sig_domains, top_*`, profile.
-  - `anchormap.log` — timestamped steps ending in a `FINISHED` line (status, elapsed, output manifest).
+  - `sensitivity_z_scores.tsv` / `sensitivity_z_labels.tsv` *(Phase 3)* — the two tables above stacked
+    across the z-sweep (each + a `z_threshold` column; labels + a per-cluster `label_stable` flag). The
+    z = `h2_z_threshold` slice equals the primaries byte-for-byte.
+  - `anchormap.log` — timestamped steps (incl. per-z gate counts + the `label-stable` summary) ending
+    in a `FINISHED` line (status, elapsed, output manifest).
   - `figures/` *(designed, Phase 4)* — per-track lollipop small-multiples, cluster×category
     dot-heatmap, AUC-vs-coherence diagnostic, and cross-cluster specificity heatmap + diagonal (PNG + PDF).
 
@@ -103,10 +116,14 @@ execution order to catch up on the method (they port the reference 1:1, single z
    **VIF** deflation, IVW Fisher-z **pooled_rg** + coherence, Fisher **ORA**.
 6. [R/label.R](R/label.R) — **BH-FDR** `q`, the **auto_label** gate, and **anchor_shape**
    (weak / sharp / diffuse / focal).
+7. [R/sensitivity.R](R/sensitivity.R) *(Phase 3)* — wraps steps 3–6 in `score_at_z` (one full re-run
+   per reliability threshold) and maps it over `cfg$z_vector` via `parallel_lapply` (`future.apply`,
+   multicore/sequential); stacks the two tables with `z_threshold` and flags per-cluster `label_stable`.
 
-Driver: [anchor_map.R](anchor_map.R) — `Rscript anchor_map.R --config <yaml> [--threads N] [--rds <file>]`
-→ the two TSVs + `anchormap.log`. *(Phase 3 adds `R/sensitivity.R` for the parallel z-sweep; Phase 4
-adds `R/plot.R` for the figures — new list items anchor here.)*
+Driver: [anchor_map.R](anchor_map.R) —
+`Rscript anchor_map.R --config <yaml> [--threads N] [--rds <file>] [--z-vector 3,4,5]` → the two
+primary TSVs + the two sensitivity TSVs + `anchormap.log`. *(Phase 4 adds `R/plot.R` for the figures —
+a new list item anchors here.)*
 
 ## Data flow at a glance
 
@@ -127,19 +144,22 @@ GenomicSEM .rds ─► ingest_rds.R   per-trait       source: trait_rg→    IVW
 
 ## Requirements
 
-R ≥ 4.4 with `data.table`, `yaml` (required) and `poolr` (optional, `n_eff` cross-check). No
-`argparse`/`testthat` needed — the CLI and tests use base R.
+R ≥ 4.4 with `data.table`, `yaml`, `future`, `future.apply` (required; the last two drive the Phase-3
+z-sweep) and `poolr` (optional, `n_eff` cross-check). No `argparse`/`testthat` needed — the CLI and
+tests use base R.
 
 ## Run
 
 ```bash
-Rscript anchor_map.R --config configs/carey_rint15_anthro.yaml   # TSV route -> results/carey_rint15_anthro/
+Rscript anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4   # TSV route -> results/carey_rint15_anthro/
 Rscript anchor_map.R --config configs/carey_rint15.yaml --rds <ldsc_output.rds>   # .rds route (override input)
+Rscript anchor_map.R --config configs/carey_rint15.yaml --z-vector 2,3,4,5,6     # override the z-sweep
 
 Rscript tests/fixtures/make_synthetic_ldsc.R                     # build the synthetic .rds fixtures
 Rscript anchor_map.R --config configs/synthetic_rds.yaml         # .rds-route end-to-end smoke
 Rscript tests/run_tests.R                                        # Phase-1 analytic unit tests (base-R asserts)
 Rscript tests/test_phase2.R                                      # Phase-2: delta-method, round-trip, fallback, VIF-invariance
+Rscript tests/test_phase3.R                                      # Phase-3: primary-slice parity, thread-invariance, label_stable
 bash    validation/run_oracle.sh                                 # full cross-language parity vs Python
 ```
 
@@ -154,13 +174,17 @@ bash    validation/run_oracle.sh                                 # full cross-la
 - **`perm_p`/`q`** agree within Monte-Carlo error (numpy and R RNG streams differ; the gate anchors
   on the deterministic `vif_p` + label stability). Near-tie category **ranks** can reorder within MC
   noise without changing any auto-label.
+- **Sensitivity (Phase 3):** the z = `h2_z_threshold` slice of `sensitivity_z_scores.tsv` is
+  byte-identical to `category_anchor_scores.tsv`; the sweep is invariant to `--threads`; gate counts
+  are monotonic in z (anthro 14/15 clusters label-stable across `{3,4,5}`, disease 8/15); no
+  `anchor_eligible=FALSE` category labels any cluster at any z.
 
 ## Conventions
 
 Short pointers only — the authoritative text lives in [CLAUDE.md](CLAUDE.md).
 
 - **Config-over-CLI:** all params live in a `--config <yaml>`; reuse parent configs unchanged (adjust
-  paths only). CLI flags reserved for `--threads` / `--z-vector` (later phases).
+  paths only). CLI flags are limited to `--threads`, `--z-vector` (Phase 3) and `--rds` (Phase 2).
 - **Schemas:** the rg long-table, LDSC `--rg`, GenomicSEM `.rds`, ontology, and output column
   contracts are documented in CLAUDE.md → *Data schemas*.
 - **Porting gotchas:** scipy `fisher_exact` returns the *sample* OR `(a·d)/(b·c)` (not R's

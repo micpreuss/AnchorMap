@@ -6,7 +6,7 @@ correlations (`rg`) to a trait panel, it scores — competitively, size-aware, a
 **which ontology domain each cluster anchors to**, how confidently, and whether the anchor is *sharp*
 or *diffuse*.
 
-**Status: Phases 1–2 complete (R engine), later phases designed.** The R engine in [R/](R/) +
+**Status: Phases 1–3 complete (R engine), later phases designed.** The R engine in [R/](R/) +
 [anchor_map.R](anchor_map.R) is a validated drop-in for the Python reference (exact deterministic
 parity on the anthro + disease tracks; see [README.md](README.md)). **Phase 2 built**: GenomicSEM
 `.rds` ingestion ([R/ingest_rds.R](R/ingest_rds.R) — vech-indexed delta-method `rg_se`, `S`→rg
@@ -15,9 +15,18 @@ redundancy auto-fallback (trait_rg → cluster-profile proxy → `VIF=1`) in
 [R/redundancy.R](R/redundancy.R)`:select_corr_source`; validated by
 [tests/test_phase2.R](tests/test_phase2.R) (delta-method numeric-diff, round-trip, fallback,
 VIF-invariance) against synthetic fixtures, with Phase-1 oracle parity preserved byte-for-byte.
-Still designed-not-built: the parallel z-sweep
-(Phase 3), the **plotting/visualization module** (Phase 4), and the **Dockerfile + Nextflow process**
-(Phase 5) — so the container/orchestration rows below remain *designed*. The project is **under git**
+**Phase 3 built**: the parallel h²-reliability **z-sweep** ([R/sensitivity.R](R/sensitivity.R) —
+`score_at_z` per-z re-run + `run_sensitivity` over `cfg$z_vector` (default `{3,4,5}`) via
+`future.apply` `parallel_lapply`, with `--z-vector`/`--threads`), emitting two extra TSVs
+(`sensitivity_z_scores.tsv`, `sensitivity_z_labels.tsv` with a per-cluster `label_stable` flag)
+alongside the unchanged primaries; validated by [tests/test_phase3.R](tests/test_phase3.R)
+(primary-slice parity incl. `perm_p`, thread-invariance, `label_stable`, gate monotonicity). **New
+deps:** `future`, `future.apply`. Determinism is engineered: each z-task re-seeds with `random_seed`
+**and pins the RNG kind to Mersenne-Twister** (future.seed flips it to L'Ecuyer), so the
+z = `h2_z_threshold` slice is byte-identical to the Phase-1/2 single-z primaries and the whole sweep
+is thread-count- and backend-invariant; `perm_p` stays serial in `score.R` to protect that parity.
+Still designed-not-built: the **plotting/visualization module** (Phase 4) and the **Dockerfile +
+Nextflow process** (Phase 5) — so the container/orchestration rows below remain *designed*. The project is **under git**
 (GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is gitignored
 (it is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as
 the source of truth; the plan for the next phase goes in `.agents/plans/`.
@@ -63,8 +72,9 @@ AnchorMap/
 │   └── anchormap-phase1-r-engine-port.md   ← ★ the next thing to build
 ├── .claude/                  ← injected scaffold (skills, settings); do not treat as project code
 ├── claude-science-scaffold/  ← vendored source of .claude (own git repo) — not part of AnchorMap
-├── R/{io,gate,redundancy,score,label}.R   ← Phase-1 engine modules (sensitivity/plot/main = Phases 3–5)
+├── R/{io,gate,redundancy,score,label}.R   ← Phase-1 engine modules (plot/main = Phases 4–5)
 ├── R/ingest_rds.R            ← Phase-2 GenomicSEM .rds reader (vech delta-method, partition, standardize)
+├── R/sensitivity.R           ← Phase-3 parallel z-sweep (score_at_z, run_sensitivity, future.apply parallel_lapply)
 ├── anchor_map.R              ← CLI entry (--config <yaml> [--rds <file>])
 ├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke)
 ├── ontology/                 ← disease/anthro/lab ontology TSVs (Input D)
@@ -117,6 +127,11 @@ ontology TSV  ───────────┘                              
 ---
 
 ## Conventions
+
+### Git / version control
+- **Do NOT create new branches.** Work is already on a per-phase feature branch — commit (and merge)
+  on the current branch; never branch again, even for a new phase. Confirm the branch first if unsure.
+- Commits use Conventional Commits tags and carry **no** `Co-Authored-By` footer (match existing history).
 
 ### Compute / infrastructure
 - Reproducibility is the headline: **pin everything** (base image by tag, CRAN via dated P3M snapshot,
