@@ -1,14 +1,16 @@
 #!/usr/bin/env Rscript
-# anchor_map.R — AnchorMap engine CLI (Phase 1).
+# anchor_map.R — AnchorMap engine CLI (Phase 2).
 #
 # Faithful R port of cluster_anchoring/anchor_categories.py. Reads the identical YAML configs.
-#   Usage: Rscript anchor_map.R --config <config.yaml> [--threads N]
+#   Usage: Rscript anchor_map.R --config <config.yaml> [--threads N] [--rds <ldsc_output.rds>]
 #
 # Writes (flat, mirroring the Python reference, into the config's out_dir):
 #   category_anchor_scores.tsv   one row per (cluster, level, category)
 #   cluster_anchor_labels.tsv    one row per cluster (auto-label + anchor shape)
 #   anchormap.log                timestamped steps, ending in a FINISHED statement
-# Phase 1 is single-z and honours the config `vif_correlation` flag verbatim (no auto-fallback yet).
+# Still single-z (the parallel z-sweep is Phase 3). Phase 2 adds: the GenomicSEM .rds input route
+# (--rds / cfg$rds, via R/ingest_rds.R) and the `vif_correlation: auto` redundancy auto-fallback.
+# Explicit `trait_rg`/`cluster_profile` modes keep Phase-1 behaviour byte-for-byte.
 
 suppressPackageStartupMessages({ library(data.table); library(yaml) })
 
@@ -19,19 +21,20 @@ get_script_dir <- function() {
   if (length(f)) dirname(normalizePath(sub("^--file=", "", f[1]))) else getwd()
 }
 .SDIR <- get_script_dir()
-for (m in c("io.R","gate.R","redundancy.R","score.R","label.R"))
+for (m in c("io.R","gate.R","redundancy.R","score.R","label.R","ingest_rds.R"))
   source(file.path(.SDIR, "R", m))
 
 # ---- tiny arg parser (no argparse dependency) ------------------------------
 parse_args <- function(a) {
-  out <- list(config = NULL, threads = 1L)
+  out <- list(config = NULL, threads = 1L, rds = NULL)
   i <- 1L
   while (i <= length(a)) {
     if (a[i] == "--config")  { out$config  <- a[i + 1L]; i <- i + 2L }
     else if (a[i] == "--threads") { out$threads <- as.integer(a[i + 1L]); i <- i + 2L }
+    else if (a[i] == "--rds")     { out$rds     <- a[i + 1L]; i <- i + 2L }
     else i <- i + 1L
   }
-  if (is.null(out$config)) stop("usage: anchor_map.R --config <config.yaml> [--threads N]")
+  if (is.null(out$config)) stop("usage: anchor_map.R --config <config.yaml> [--threads N] [--rds <file>]")
   out
 }
 
@@ -43,25 +46,40 @@ parse_args <- function(a) {
 .LABEL_COLS <- c("cluster_label","auto_label","anchor_shape","anchor_margin","anchor_focus",
                  "n_sig_domains","top_auc","top_q","top_pooled_rg","top_coherence","profile")
 
-run_anchormap <- function(config_path, threads = 1L) {
+run_anchormap <- function(config_path, threads = 1L, rds = NULL) {
   t0 <- Sys.time()
   log <- character(0)
   emit <- function(...) { line <- sprintf(...); message(line); log[[length(log) + 1L]] <<- line }
-  emit("[start] %s  AnchorMap engine (Phase 1)  config=%s",
+  emit("[start] %s  AnchorMap engine (Phase 2)  config=%s",
        format(t0, "%Y-%m-%d %H:%M:%S"), config_path)
 
   data.table::setDTthreads(max(1L, threads))
   cfg   <- load_config(config_path)
   sroot <- stage_root_of(config_path)
   set.seed(as.integer(cfg[["random_seed"]]))
+  emit("[config] random_seed=%d permutation_K=%d vif_correlation=%s",
+       as.integer(cfg[["random_seed"]]), as.integer(cfg[["permutation_K"]]), cfg[["vif_correlation"]])
 
-  rg_long  <- resolve_path(sroot, cfg[["rg_long"]])
   ontology <- resolve_path(sroot, cfg[["ontology"]])
   out_dir  <- resolve_path(sroot, cfg[["out_dir"]])
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-  emit("[load] %s", rg_long)
-  df  <- read_long(rg_long)
+  # ---- input route: GenomicSEM .rds (Input C) OR rg long-TSV (Input A) ----
+  rds_path <- if (!is.null(rds)) rds else cfg[["rds"]]
+  trait_rg_override <- NULL
+  if (!is.null(rds_path)) {
+    rds_path <- resolve_path(sroot, rds_path)
+    emit("[ingest] GenomicSEM .rds route: %s", rds_path)
+    route <- read_rds_route(rds_path, cfg, sroot, emit)
+    df <- route[["df"]]; trait_rg_override <- route[["trait_rg"]]
+    emit("[ingest] %d cluster factors x %d panel traits -> %d long rows",
+         route[["n_factors"]], route[["n_panel"]], nrow(df))
+  } else {
+    rg_long <- resolve_path(sroot, cfg[["rg_long"]])
+    emit("[load] %s", rg_long)
+    df <- read_long(rg_long)
+  }
+
   g   <- apply_universe_gate(df, cfg)
   ont <- read_ontology(ontology, cfg[["ontology_key"]])
   g   <- attach_ontology(g, ont, cfg[["ontology_key"]], cfg[["levels"]])
@@ -70,18 +88,10 @@ run_anchormap <- function(config_path, threads = 1L) {
        cfg[["trait_group"]], nrow(g), length(unique(g[["cluster_label"]])), med,
        as.numeric(cfg[["h2_z_threshold"]]))
 
-  if (cfg[["vif_correlation"]] == "trait_rg") {
-    mpath <- resolve_path(sroot, cfg[["trait_rg_matrix"]])
-    tids  <- unique(g[["trait_id"]])
-    corr  <- build_trait_rg_matrix(mpath, tids, isTRUE(cfg[["trait_rg_require_converged"]]))
-    sub   <- reindex_corr(corr, tids); diag(sub) <- NA
-    cov   <- mean(apply(sub, 1, function(r) any(is.finite(r))))
-    emit("[vif] trait_rg matrix %s (gated-trait coverage %.0f%%)", mpath, 100 * cov)
-    if (cov < 0.5) emit("WARN trait_rg coverage %.0f%% - VIF near-uncorrected", 100 * cov)
-  } else {
-    corr <- build_trait_profile_corr(g)
-    emit("[vif] cluster_profile proxy correlation (trait x trait across clusters)")
-  }
+  # ---- redundancy source (Phase-1 explicit modes unchanged; `auto` self-selects) ----
+  sel  <- select_corr_source(g, cfg, sroot, trait_rg_override, emit)
+  corr <- sel[["corr"]]
+  emit("[vif] reason: %s", sel[["reason"]])
 
   rows <- list()
   for (cl in unique(g[["cluster_label"]])) {
@@ -117,5 +127,5 @@ run_anchormap <- function(config_path, threads = 1L) {
 
 if (sys.nframe() == 0L) {
   a <- parse_args(commandArgs(TRUE))
-  run_anchormap(a$config, a$threads)
+  run_anchormap(a$config, a$threads, a$rds)
 }

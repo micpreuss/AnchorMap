@@ -1,0 +1,9 @@
+trait_id	anthro_class	anchor_eligible
+BMI	anthro	TRUE
+WT	anthro	TRUE
+HT	anthro	TRUE
+WC	anthro	TRUE
+T2D	cardio	TRUE
+CAD	cardio	TRUE
+HTN	cardio	TRUE
+AF	cardio	TRUE

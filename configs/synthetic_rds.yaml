@@ -1,0 +1,50 @@
+# AnchorMap — synthetic GenomicSEM .rds route example (Phase 2 end-to-end smoke).
+# Drives the full engine straight from a GenomicSEM ldsc() artifact (no rg long-TSV, no separate
+# trait x trait summary): the .rds reader derives both the long-table and the redundancy matrix.
+# Build the fixtures first: Rscript tests/fixtures/make_synthetic_ldsc.R
+# Run: Rscript anchor_map.R --config configs/synthetic_rds.yaml
+#
+# The .rds-derived trait x trait block has 100% coverage, so `vif_correlation: auto` selects
+# trait_rg (no fallback). Outputs the same two TSVs as the TSV route.
+
+run_label: synthetic_rds
+
+# ---- input: GenomicSEM .rds (Input C) instead of rg_long + trait_rg_matrix ----
+rds: tests/fixtures/synthetic_ldsc_panel.rds
+ontology: tests/fixtures/synthetic_panel_ontology.tsv
+out_dir: results/synthetic_rds
+
+# ---- partition of the joint .rds: cluster factors vs panel traits ----
+cluster_factor_pattern: "^C[0-9]"      # C0, C1, C5_sub0 -> factors; everything else -> panel traits
+
+# ---- trait universe / LDSC reliability gate ----
+trait_group: disease
+require_ldsc_converged: true
+drop_negative_h2: true
+h2_z_threshold: 4.0
+
+# ---- ontology: anthro-style trait_id join, single class level ----
+ontology_key: trait_id
+levels: [anthro_class]
+primary_level: anthro_class
+min_category_n: 3
+
+# ---- competitive enrichment ----
+rank_variable: abs_z
+permutation_K: 2000
+random_seed: 1
+vif_correlation: auto                  # self-selecting: trait_rg (100% coverage) -> proxy -> VIF=1
+vif_coverage_min: 0.5
+
+# ---- over-representation ----
+hit_abs_rg: 0.2
+hit_bonferroni: true
+
+# ---- auto-label rule ----
+label_q_max: 0.05
+label_auc_min: 0.60
+
+# ---- anchor shape ----
+shape_margin_sharp: 0.10
+shape_margin_diffuse: 0.05
+shape_focus_diffuse: 3.0

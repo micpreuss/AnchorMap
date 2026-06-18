@@ -17,7 +17,13 @@ default_config <- function() {
     rank_variable = "abs_z", permutation_K = 2000, random_seed = 1, vif_min_rho = 0.0,
     vif_correlation = "cluster_profile", trait_rg_require_converged = TRUE,
     hit_abs_rg = 0.2, hit_bonferroni = TRUE, label_q_max = 0.05, label_auc_min = 0.60,
-    shape_margin_sharp = 0.10, shape_margin_diffuse = 0.05, shape_focus_diffuse = 3.0)
+    shape_margin_sharp = 0.10, shape_margin_diffuse = 0.05, shape_focus_diffuse = 3.0,
+    # ---- Phase 2 (additive; do NOT change vif_correlation's default) ----
+    # vif_coverage_min: trait_rg coverage below which `auto` falls back to the proxy.
+    # cluster_factor_pattern / cluster_factors: how the .rds route splits factors vs panel traits.
+    # rds / rds_trait_meta: optional GenomicSEM .rds input route + its trait_id->trait_category map.
+    vif_coverage_min = 0.5, cluster_factor_pattern = "^C[0-9]", cluster_factors = NULL,
+    rds = NULL, rds_trait_meta = NULL)
 }
 
 # Read a YAML config and overlay it on the defaults. `levels` is flattened to a character vector.

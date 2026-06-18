@@ -89,3 +89,78 @@ meff_poolr <- function(R) {
   Rc <- .clean_corr(R)
   tryCatch(as.numeric(poolr::meff(Rc, method = "liji")), error = function(e) NA_real_)
 }
+
+# ---- Phase 2: redundancy-source auto-selection -----------------------------
+
+# Gated-trait coverage of a trait x trait correlation matrix: reindex to `tids`, NA the diagonal,
+# then the fraction of traits with >= 1 finite off-diagonal correlation. Lifted verbatim from the
+# Phase-1 anchor_map.R [vif] block so the explicit trait_rg path is byte-identical.
+trait_rg_coverage <- function(corr, tids) {
+  sub <- reindex_corr(corr, tids); diag(sub) <- NA
+  mean(apply(sub, 1, function(r) any(is.finite(r))))
+}
+
+# No-deflation correlation source: unit diagonal, NA off-diagonal. -> rho_bar = 0 -> VIF = 1;
+# meff_liji cleans NA->0 (identity) -> n_eff = n. The honest "VIF uncorrected" fallback.
+identity_corr <- function(tids) {
+  tids <- as.character(unique(tids))
+  M <- matrix(NA_real_, length(tids), length(tids), dimnames = list(tids, tids))
+  diag(M) <- 1
+  M
+}
+
+# Select the within-category redundancy source, honouring cfg$vif_correlation:
+#   "trait_rg"        -> actual trait x trait LDSC --rg matrix (or `trait_rg_override`); Phase-1 behaviour.
+#   "cluster_profile" -> the rg-profile proxy; Phase-1 behaviour.
+#   "auto"            -> trait_rg if coverage >= vif_coverage_min, else proxy if >=3 clusters, else
+#                        identity (VIF=1) + loud WARN.
+# Returns list(corr, source, coverage, reason). VIF affects only vif_p / CI width downstream — never
+# the AUC, ranks, pooled_rg point estimate or coherence (asserted in the Phase-2 tests).
+select_corr_source <- function(g, cfg, sroot, trait_rg_override = NULL, emit = message) {
+  tids       <- unique(g[["trait_id"]])
+  n_clusters <- length(unique(g[["cluster_label"]]))
+  mode       <- cfg[["vif_correlation"]]
+  cov_min    <- as.numeric(cfg[["vif_coverage_min"]])
+
+  build_trait_rg <- function() {
+    if (!is.null(trait_rg_override)) return(trait_rg_override)
+    mpath <- resolve_path(sroot, cfg[["trait_rg_matrix"]])
+    build_trait_rg_matrix(mpath, tids, isTRUE(cfg[["trait_rg_require_converged"]]))
+  }
+
+  if (identical(mode, "trait_rg")) {
+    corr <- build_trait_rg(); cov <- trait_rg_coverage(corr, tids)
+    emit("[vif] source=trait_rg coverage=%.0f%%", 100 * cov)
+    if (cov < cov_min) emit("WARN trait_rg coverage %.0f%% < %.0f%% - VIF near-uncorrected", 100 * cov, 100 * cov_min)
+    return(list(corr = corr, source = "trait_rg", coverage = cov, reason = "explicit trait_rg"))
+  }
+
+  if (identical(mode, "cluster_profile")) {
+    corr <- build_trait_profile_corr(g)
+    emit("[vif] source=cluster_profile proxy (trait x trait across clusters)")
+    return(list(corr = corr, source = "cluster_profile", coverage = NA_real_, reason = "explicit cluster_profile"))
+  }
+
+  if (identical(mode, "auto")) {
+    trait_rg <- tryCatch(build_trait_rg(), error = function(e) { emit("WARN trait_rg build failed: %s", conditionMessage(e)); NULL })
+    cov <- if (!is.null(trait_rg)) trait_rg_coverage(trait_rg, tids) else 0
+    if (!is.null(trait_rg) && cov >= cov_min) {
+      emit("[vif] source=trait_rg (auto) coverage=%.0f%%", 100 * cov)
+      return(list(corr = trait_rg, source = "trait_rg", coverage = cov,
+                  reason = sprintf("auto: trait_rg coverage %.0f%% >= %.0f%%", 100 * cov, 100 * cov_min)))
+    }
+    if (n_clusters >= 3) {
+      corr <- build_trait_profile_corr(g)
+      emit("[vif] source=cluster_profile (auto fallback) trait_rg coverage=%.0f%% < %.0f%%", 100 * cov, 100 * cov_min)
+      return(list(corr = corr, source = "cluster_profile", coverage = cov,
+                  reason = sprintf("auto: trait_rg coverage %.0f%% < %.0f%%, %d clusters >=3 -> proxy", 100 * cov, 100 * cov_min, n_clusters)))
+    }
+    corr <- identity_corr(tids)
+    emit("WARN [vif] source=identity (VIF=1 UNCORRECTED): trait_rg coverage=%.0f%% < %.0f%% AND only %d cluster(s) <3",
+         100 * cov, 100 * cov_min, n_clusters)
+    return(list(corr = corr, source = "identity", coverage = cov,
+                reason = sprintf("auto: trait_rg coverage %.0f%% < %.0f%% and %d cluster(s) <3 -> VIF=1", 100 * cov, 100 * cov_min, n_clusters)))
+  }
+
+  stop(sprintf("select_corr_source: unknown vif_correlation mode '%s'", mode))
+}

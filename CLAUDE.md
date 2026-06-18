@@ -6,10 +6,16 @@ correlations (`rg`) to a trait panel, it scores — competitively, size-aware, a
 **which ontology domain each cluster anchors to**, how confidently, and whether the anchor is *sharp*
 or *diffuse*.
 
-**Status: Phase 1 complete (R engine), later phases designed.** The R engine in [R/](R/) +
+**Status: Phases 1–2 complete (R engine), later phases designed.** The R engine in [R/](R/) +
 [anchor_map.R](anchor_map.R) is a validated drop-in for the Python reference (exact deterministic
-parity on the anthro + disease tracks; see [README.md](README.md)). Still designed-not-built:
-GenomicSEM `.rds` ingestion + auto trait×trait→proxy fallback (Phase 2), the parallel z-sweep
+parity on the anthro + disease tracks; see [README.md](README.md)). **Phase 2 built**: GenomicSEM
+`.rds` ingestion ([R/ingest_rds.R](R/ingest_rds.R) — vech-indexed delta-method `rg_se`, `S`→rg
+standardization, factor/panel partition) via `--rds`/`cfg$rds`, plus the `vif_correlation: auto`
+redundancy auto-fallback (trait_rg → cluster-profile proxy → `VIF=1`) in
+[R/redundancy.R](R/redundancy.R)`:select_corr_source`; validated by
+[tests/test_phase2.R](tests/test_phase2.R) (delta-method numeric-diff, round-trip, fallback,
+VIF-invariance) against synthetic fixtures, with Phase-1 oracle parity preserved byte-for-byte.
+Still designed-not-built: the parallel z-sweep
 (Phase 3), the **plotting/visualization module** (Phase 4), and the **Dockerfile + Nextflow process**
 (Phase 5) — so the container/orchestration rows below remain *designed*. The project is **under git**
 (GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is gitignored
@@ -57,12 +63,15 @@ AnchorMap/
 │   └── anchormap-phase1-r-engine-port.md   ← ★ the next thing to build
 ├── .claude/                  ← injected scaffold (skills, settings); do not treat as project code
 ├── claude-science-scaffold/  ← vendored source of .claude (own git repo) — not part of AnchorMap
+├── R/{io,gate,redundancy,score,label}.R   ← Phase-1 engine modules (sensitivity/plot/main = Phases 3–5)
+├── R/ingest_rds.R            ← Phase-2 GenomicSEM .rds reader (vech delta-method, partition, standardize)
+├── anchor_map.R              ← CLI entry (--config <yaml> [--rds <file>])
+├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke)
+├── ontology/                 ← disease/anthro/lab ontology TSVs (Input D)
+├── tests/{run_tests,test_phase2}.R + tests/fixtures/   ← analytic + oracle-parity + synthetic-.rds fixtures
+├── validation/               ← R-vs-Python oracle comparator
+├── results/<run_label>/      ← engine outputs (two TSVs + anchormap.log)
 └── (planned, not yet created):
-    ├── R/{io,gate,redundancy,score,label,sensitivity,plot,main}.R   ← engine modules (plot.R = Phase 4)
-    ├── anchor_map.R          ← CLI entry (--config <yaml>)
-    ├── config/*.yaml         ← canonical params (reuse parent configs verbatim)
-    ├── tests/{testthat,fixtures}/   ← analytic + oracle-parity fixtures
-    ├── validation/           ← R-vs-Python oracle comparator
     ├── docker/Dockerfile     ← pinned rocker image (Phase 5)
     └── nextflow/             ← ANCHORMAP process + nextflow.config (Phase 5)
 ```
@@ -85,10 +94,11 @@ ontology TSV  ───────────┘                              
 
 - **Two input routes (same engine):** the standardized `rg` long-table TSV **or** a GenomicSEM `ldsc()` `.rds`
   from which both the long-table (rg = S/√(diag·diag); rg_se via **delta-method on V**) and the trait×trait
-  matrix are derived. *Phase 1 = TSV route only; the `.rds` route is Phase 2.*
-- **Redundancy source:** trait×trait rg is the **default**; auto-fallback to the cluster-profile proxy when
-  coverage < `vif_coverage_min` (0.5); else VIF=1 with a loud WARN. *Auto-fallback is Phase 2; Phase 1 honors
-  the config `vif_correlation` flag verbatim.*
+  matrix are derived. *Both routes built: TSV (Phase 1) + the `.rds` route (`--rds`/`cfg$rds`, Phase 2,
+  [R/ingest_rds.R](R/ingest_rds.R)).*
+- **Redundancy source:** explicit `vif_correlation` modes (`trait_rg`/`cluster_profile`) honored verbatim
+  (Phase-1 parity); `vif_correlation: auto` (Phase 2, `select_corr_source`) self-selects trait×trait rg when
+  coverage ≥ `vif_coverage_min` (0.5), else the cluster-profile proxy (≥3 clusters), else VIF=1 with a loud WARN.
 - **Must NOT cross:** `anchor_eligible=FALSE` categories (Quantitative/Lab/administrative) may be scored but
   can **never** become a cluster's `auto_label` — the forbidden-FP gate. VIF affects only `vif_p`/CI width,
   **never** the AUC, ranks, `pooled_rg` point estimate, or coherence.

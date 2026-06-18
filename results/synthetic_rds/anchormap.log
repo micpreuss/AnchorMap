@@ -1,0 +1,13 @@
+[start] 2026-06-18 16:11:42  AnchorMap engine (Phase 2)  config=configs/synthetic_rds.yaml
+[config] random_seed=1 permutation_K=2000 vif_correlation=auto
+[ingest] GenomicSEM .rds route: /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/AnchorMap/tests/fixtures/synthetic_ldsc_panel.rds
+[ingest] 3 cluster factors x 8 panel traits -> 24 long rows
+[gate] disease track: 24 gated rows, 3 clusters, 8 traits/cluster (median); gate h2_z>4
+[vif] source=trait_rg (auto) coverage=100%
+[vif] reason: auto: trait_rg coverage 100% >= 50%
+[write] /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/AnchorMap/results/synthetic_rds/category_anchor_scores.tsv
+[write] /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/AnchorMap/results/synthetic_rds/cluster_anchor_labels.tsv
+  C0         -> ambiguous          [weak]
+  C1         -> ambiguous          [weak]
+  C5_sub0    -> anthro             [sharp]
+FINISHED ok | 6 score rows, 3 clusters | 0.1s | outputs: category_anchor_scores.tsv, cluster_anchor_labels.tsv

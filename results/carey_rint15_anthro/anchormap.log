@@ -1,7 +1,9 @@
-[start] 2026-06-18 11:16:27  AnchorMap engine (Phase 1)  config=configs/carey_rint15_anthro.yaml
+[start] 2026-06-18 16:11:31  AnchorMap engine (Phase 2)  config=configs/carey_rint15_anthro.yaml
+[config] random_seed=1 permutation_K=2000 vif_correlation=trait_rg
 [load] /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/UKBB_CLUSTER_GWAS/scripts/FinnGen_PheWAS_RG/results/carey_rint_tuned_15clusters_neff_max_empirical_covz/rg/cluster_trait_rg_long_with_p.tsv
 [gate] disease track: 9075 gated rows, 15 clusters, 605 traits/cluster (median); gate h2_z>4
-[vif] trait_rg matrix /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/UKBB_CLUSTER_GWAS/data/finngen_rg/finngen_R12_FIN.ldsc.summary.tsv (gated-trait coverage 100%)
+[vif] source=trait_rg coverage=100%
+[vif] reason: explicit trait_rg
 [write] /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/AnchorMap/results/carey_rint15_anthro/category_anchor_scores.tsv
 [write] /Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/AnchorMap/results/carey_rint15_anthro/cluster_anchor_labels.tsv
   C0         -> ambiguous          [weak]
