@@ -39,6 +39,11 @@ clusters across multiple cohorts, and a hand-curated anchoring does not scale or
 - **A4 — Parallel sensitivity + delivery.** Run a **z-threshold sensitivity sweep in parallel**
   (multi-CPU `perm_p`), emit detailed TSVs + a step log, and ship a **version-pinned, Nextflow-ready
   Docker image** carrying the project's known container fixes.
+- **A5 — Visualization.** Render the anchor profile and cross-cluster specificity as
+  **publication-ready figures** (lollipop small-multiples, cluster×category dot-heatmap,
+  AUC-vs-coherence diagnostic, specificity heatmap + diagonal reduction), config-driven and headless,
+  from the same scored TSVs — porting the reference `plot_anchors.py` / `plot_specificity*.py`
+  encodings to R (ggplot2).
 
 ---
 
@@ -160,12 +165,12 @@ clusters; gate counts are logged per z value.
 - *Data:* ✅ Input A (long TSV) · ✅ Input B (LDSC `--rg`) · ✅ Input C (GenomicSEM `.rds` → derive A+B) · ✅ Input D (ontology, multi-track).
 - *Methods:* ✅ full reference pipeline in R (gate → per-trait stats → ontology → n_eff/VIF → AUC → perm_p → pooled rg → ORA → FDR → label → shape) · ✅ trait×trait default + auto-proxy-fallback · ✅ z-threshold sensitivity sweep.
 - *Compute:* ✅ version-pinned Docker (`rocker/r-ver:4.4.2`) with project fixes · ✅ multi-CPU `perm_p` + parallel z-sweep · ✅ Nextflow DSL2 process.
-- *Deliverables:* ✅ detailed TSVs (primary + sensitivity) · ✅ step log with `FINISHED` statement.
+- *Visualization:* ✅ R plotting module (`R/plot.R`, ggplot2) porting the reference figures — lollipop small-multiples · cluster×category dot-heatmap · AUC-vs-coherence diagnostic · cross-cluster specificity heatmap + diagonal — config-driven and headless.
+- *Deliverables:* ✅ detailed TSVs (primary + sensitivity) · ✅ step log with `FINISHED` statement · ✅ **publication-ready figures** (PNG + PDF per track).
 
 **Out of scope / deferred** ❌
 
-- ❌ Plotting (lollipop / dot-heatmap / specificity) — deferred to keep the tool slim.
-- ❌ Narrative `validation_report.md` / `summary.md` generators — deferred (numbers live in the TSVs).
+- ❌ Narrative `validation_report.md` / `summary.md` generators — deferred (numbers live in the TSVs + figures).
 - ❌ Building the cluster×trait `rg` **upstream** (running GenomicSEM per pair from raw sumstats) — AnchorMap consumes `ldsc()` output, it does not run LDSC.
 - ❌ Multi-cohort batch orchestration and R-package/nf-core packaging — future (§14).
 
@@ -286,13 +291,15 @@ Input (TSV long-table  OR  GenomicSEM .rds  +  trait×trait LDSC summary  +  ont
                        └─ label.R   BH-FDR · rank · auto-label · anchor shape            │ per z
    sensitivity.R: future_lapply over z ∈ {2,3,4,5,6,7}  ──────────────────────────────────┘
         └─ main.R    optparse CLI + YAML config + logging → TSVs + anchormap.log (FINISHED)
+             └─ plot.R   ggplot2 figures from the scored TSVs (lollipop · dot-heatmap · AUC-vs-coherence · specificity + diagonal)
 ```
 
 ### 7.2 R package layout (smart & slim, commented)
 
 `R/io.R` (3 readers + asserts) · `R/gate.R` · `R/redundancy.R` (poolR + fallback) · `R/score.R`
 (AUC, parallel perm, VIF, pooled rg, ORA) · `R/label.R` (FDR, label, shape) · `R/sensitivity.R`
-(z-sweep, parallel) · `R/main.R` (CLI/config/log). `config/*.yaml` canonical params · `tests/` fixtures.
+(z-sweep, parallel) · `R/plot.R` (ggplot2: lollipop · dot-heatmap · AUC-vs-coherence · specificity +
+diagonal) · `R/main.R` (CLI/config/log). `config/*.yaml` canonical params · `tests/` fixtures.
 
 ### 7.3 Container / environment (version-pinned, Nextflow-ready)
 
@@ -301,7 +308,8 @@ Input (TSV long-table  OR  GenomicSEM .rds  +  trait×trait LDSC summary  +  ont
 - **System deps:** `apt-get install --no-install-recommends procps libcurl4-openssl-dev libssl-dev
   libxml2-dev cmake git ca-certificates locales && rm -rf /var/lib/apt/lists/*`.
 - **R deps (pinned):** dated **Posit Package Manager (P3M) snapshot** for CRAN packages
-  (`poolr, data.table, Matrix, future, future.apply, optparse, yaml/jsonlite`), and
+  (`poolr, data.table, Matrix, future, future.apply, optparse, yaml/jsonlite` + plotting:
+  `ggplot2, patchwork, ragg, scales`), and
   `remotes::install_github("GenomicSEM/GenomicSEM@<commit>")` pinned to a commit/tag.
 - **Project fixes carried** (from `docker/postgwas/README.md`): `USER root` (write to GCS-FUSE work dirs
   on Google Batch) + `ENTRYPOINT []` (prevent an upstream entrypoint from intercepting Nextflow's
@@ -323,6 +331,9 @@ NUMEXPR_NUM_THREADS=1` (avoid BLAS oversubscription), and passes `--threads ${ta
 results/<run_label>/
   primary/      category_anchor_scores.tsv   cluster_anchor_labels.tsv
   sensitivity/  sensitivity_z_scores.tsv     sensitivity_z_labels.tsv
+  figures/      anchor_lollipop_<track>.{png,pdf}        anchor_dotheatmap_<track>.{png,pdf}
+                anchor_auc_coherence_<track>.{png,pdf}   anchor_specificity_<track>.{png,pdf}
+                anchor_specificity_diagonal_<track>.{png,pdf}
   logs/         anchormap.log
 ```
 
@@ -367,9 +378,11 @@ symmetric with unit diagonal; `n_eff ≤ N`; trait×trait coverage % computed an
 | `primary/cluster_anchor_labels.tsv` | TSV | `cluster_label, auto_label, anchor_shape, anchor_margin, anchor_focus, n_sig_domains, top_auc, top_q, top_pooled_rg, top_coherence, profile` | reporting |
 | `sensitivity/sensitivity_z_scores.tsv` | TSV | as scores + a `z_threshold` column, stacked across the sweep | sensitivity analysis |
 | `sensitivity/sensitivity_z_labels.tsv` | TSV | labels + `z_threshold` + a `label_stable` flag | robustness audit |
-| `logs/anchormap.log` | text | timestamped steps: config echo, package versions + input file hashes + image tag, per-z gate counts, fallback decision + coverage %, per-z progress, and a final **`FINISHED`** line (status, elapsed, output manifest) | provenance / ops |
+| `figures/anchor_{lollipop,dotheatmap,auc_coherence}_<track>.{png,pdf}` | PNG + PDF | per-cluster **lollipop** (AUC x-axis, stem = signed `pooled_rg`, alpha = coherence, ring = `q<0.05`, `n` annotated); cluster×category **dot-heatmap** (size = AUC, colour = signed `pooled_rg`, black edge = `q<0.05`, ★ = auto-label); **AUC-vs-coherence** diagnostic (sign-split classes sit top-left) | reporting / publication |
+| `figures/anchor_specificity{,_diagonal}_<track>.{png,pdf}` | PNG + PDF | cross-cluster **specificity heatmap** (within-category z of signed `pooled_rg` across clusters, significance-gated) + its **diagonal** reduction (single most-distinctive significant cell per cluster) | cross-cluster distinctiveness |
+| `logs/anchormap.log` | text | timestamped steps: config echo, package versions + input file hashes + image tag, per-z gate counts, fallback decision + coverage %, per-z progress, figure manifest, and a final **`FINISHED`** line (status, elapsed, output manifest) | provenance / ops |
 
-**Deferred:** `validation_report.md`, `summary.md`, plots — see §14.
+**Deferred:** `validation_report.md`, `summary.md` — see §14.
 
 ---
 
@@ -391,6 +404,7 @@ symmetric with unit diagonal; `n_eff ≤ N`; trait×trait coverage % computed an
 - ✅ R output == Python reference on the fixture (within tolerance).
 - ✅ Trait×trait is the default redundancy source; auto-fallback to proxy (and to VIF=1) works and is logged.
 - ✅ z-sweep runs in parallel; both sensitivity TSVs emitted with a stability flag.
+- ✅ Figures render headless (lollipop, dot-heatmap, AUC-vs-coherence, specificity + diagonal) for the anthro + disease tracks, with the reference encodings (AUC and `pooled_rg` as distinct channels).
 - ✅ Image builds; `ps` present; runs under Nextflow as non-root-safe `USER root` on GCS without exit-126/permission errors.
 - ✅ All input schema contracts (§4.2) enforced with clear errors on violation.
 - ✅ The log terminates with a `FINISHED` statement and an output manifest.
@@ -414,10 +428,15 @@ Goal: parallel z-sweep and `perm_p`.
 Deliverables: ✅ `sensitivity.R` (z-vector, `future`); ✅ sensitivity TSVs + stability flag; ✅ threaded `perm_p`.
 Gate: results invariant to thread count; z=4 slice == Phase-1 primary output.
 
-**Phase 4 — Docker + Nextflow.**
+**Phase 4 — Visualization.**
+Goal: publication-ready anchor + cross-cluster specificity figures from the scored TSVs.
+Deliverables: ✅ `R/plot.R` + a `plots` config — lollipop small-multiples (AUC x-axis, stem = signed `pooled_rg`, alpha = coherence, ring = `q<0.05`), cluster×category dot-heatmap (size = AUC, colour = signed `pooled_rg`, ★ = auto-label), AUC-vs-coherence diagnostic, cross-cluster specificity heatmap + its diagonal reduction; PNG + PDF per track.
+Gate: figures render headless (ragg/Agg) for the anthro + disease tracks; encodings match the reference (AUC and `pooled_rg` are distinct channels — they diverge at sign-split classes such as Lipids).
+
+**Phase 5 — Docker + Nextflow.**
 Goal: shippable, reproducible container + process.
 Deliverables: ✅ pinned `Dockerfile` (procps, USER root, ENTRYPOINT [], P3M snapshot, smoke test); ✅ DSL2 `ANCHORMAP` process + `nextflow.config`; ✅ log with `FINISHED`.
-Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture produces all five outputs.
+Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture produces all outputs (primary + sensitivity TSVs, figures, log).
 
 ---
 
@@ -436,8 +455,8 @@ Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture pr
 
 ## 14. Future / follow-ups
 
-- Plotting module (lollipop / dot-heatmap / cross-cluster specificity) and narrative
-  `validation_report.md` / `summary.md` generators.
+- Narrative `validation_report.md` / `summary.md` generators (the numbers already live in the
+  TSVs, and the figures are produced in Phase 4).
 - Multi-cohort batch orchestration; packaging as a proper R package + an nf-core-style module.
 - Configurable rank variable (`abs_z` vs `abs_rg`) and additional `n_eff` methods exposed
   (`poolR::meff` also offers `nyholt`, `gao`, `galwey`) for sensitivity.
@@ -449,6 +468,7 @@ Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture pr
 
 **Reference code & data**
 - Reference engine: `UKBB_CLUSTER_GWAS/scripts/cluster_anchoring/anchor_categories.py` (+ `docs/approach.md`, `ontology/`).
+- Reference figures (ported in Phase 4): `UKBB_CLUSTER_GWAS/scripts/cluster_anchoring/{plot_anchors,plot_specificity,plot_specificity_diagonal}.py` (+ `docs/figures_guide.md`; encoding rationale in `docs/approach.md` §4.4/§4.7/§5.2).
 - Container fixes: `UKBB_CLUSTER_GWAS/docker/postgwas/README.md` & `Dockerfile`; `docker/genomicsem/Dockerfile` (rocker base + `remotes` pattern); root `Dockerfile` (procps pattern).
 - Nextflow conventions: `UKBB_CLUSTER_GWAS/scripts/pipeline/nextflow.config`; `scripts/genomic_sem/UKBB_Carey/main.nf` (threading); project `CLAUDE.md`.
 - GenomicSEM standardization reference: `run_cluster_gpca.R` L414–422 (`S_Stand`).

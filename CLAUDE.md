@@ -10,9 +10,10 @@ or *diffuse*.
 [anchor_map.R](anchor_map.R) is a validated drop-in for the Python reference (exact deterministic
 parity on the anthro + disease tracks; see [README.md](README.md)). Still designed-not-built:
 GenomicSEM `.rds` ingestion + auto trait×trait→proxy fallback (Phase 2), the parallel z-sweep
-(Phase 3), and the **Dockerfile + Nextflow process** (Phase 4) — so the container/orchestration rows
-below remain *designed*. The project is **not yet under git** (only the vendored
-`claude-science-scaffold/` subdir is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as
+(Phase 3), the **plotting/visualization module** (Phase 4), and the **Dockerfile + Nextflow process**
+(Phase 5) — so the container/orchestration rows below remain *designed*. The project is **under git**
+(GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is gitignored
+(it is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as
 the source of truth; the plan for the next phase goes in `.agents/plans/`.
 
 ---
@@ -39,8 +40,8 @@ a `--config <yaml>` CLI) validated by **cross-language parity against the Python
 | Orchestration | Nextflow DSL2 process `ANCHORMAP`; `output {}` block + `outputDir` (NOT `publishDir`) — inherited from parent |
 | Compute | local R (engine); Google Batch spot for production; submit from `nf-head`, not laptop |
 | Containers / envs | `rocker/r-ver:4.4.2` (pinned) + `procps` + `USER root` + `ENTRYPOINT []`; image `anchormap:0.1.0` → Artifact Registry `us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/`; **referenced by version tag, never `latest`** |
-| Storage | reads sibling `UKBB_CLUSTER_GWAS` files; writes `results/<run_label>/{primary,sensitivity,logs}/` |
-| Languages | R ≥4.4 (`poolr`, `data.table`, `Matrix`, `future`/`future.apply`, `yaml`, `argparse`, `testthat`); R `remotes` for GenomicSEM |
+| Storage | reads sibling `UKBB_CLUSTER_GWAS` files; writes `results/<run_label>/{primary,sensitivity,figures,logs}/` |
+| Languages | R ≥4.4 (`poolr`, `data.table`, `Matrix`, `future`/`future.apply`, `yaml`, `argparse`, `testthat`; plotting `ggplot2`/`patchwork`/`ragg`/`scales`); R `remotes` for GenomicSEM |
 | Methods | Li & Ji (2005) n_eff via `poolr::meff(R,"liji")`; CAMERA VIF; Mann–Whitney/Wilcoxon AUC; label-permutation null; IVW Fisher-z pooled rg; BH-FDR; anchor-shape ruleset |
 | External reference data | FinnGen **R12** FIN LDSC `--rg` summary (trait×trait rg); curated `category/anthro/lab` ontologies; GenomicSEM `ldsc()` S/V objects |
 
@@ -57,13 +58,13 @@ AnchorMap/
 ├── .claude/                  ← injected scaffold (skills, settings); do not treat as project code
 ├── claude-science-scaffold/  ← vendored source of .claude (own git repo) — not part of AnchorMap
 └── (planned, not yet created):
-    ├── R/{io,gate,redundancy,score,label,sensitivity,main}.R   ← engine modules
+    ├── R/{io,gate,redundancy,score,label,sensitivity,plot,main}.R   ← engine modules (plot.R = Phase 4)
     ├── anchor_map.R          ← CLI entry (--config <yaml>)
     ├── config/*.yaml         ← canonical params (reuse parent configs verbatim)
     ├── tests/{testthat,fixtures}/   ← analytic + oracle-parity fixtures
     ├── validation/           ← R-vs-Python oracle comparator
-    ├── docker/Dockerfile     ← pinned rocker image (Phase 4)
-    └── nextflow/             ← ANCHORMAP process + nextflow.config (Phase 4)
+    ├── docker/Dockerfile     ← pinned rocker image (Phase 5)
+    └── nextflow/             ← ANCHORMAP process + nextflow.config (Phase 5)
 ```
 
 The **reference engine being ported** lives in the sibling project:

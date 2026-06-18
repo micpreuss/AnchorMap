@@ -8,8 +8,8 @@ Pay special attention to column names, units, sign, rounding, RNG, and the two c
 > Python engine `anchor_categories.py`, reading the **standardized long-TSV** input on a **single z**
 > (read from config), and prove it reproduces the Python output. **Out of Phase 1 (do NOT build here):**
 > GenomicSEM `.rds` ingestion + delta-method rg_se (Phase 2), automatic trait×trait→proxy coverage
-> fallback (Phase 2), the parallel z-sweep + multi-CPU perm_p (Phase 3), the Docker image + Nextflow
-> process (Phase 4). Phase 1 *honors the config's `vif_correlation` flag exactly as Python does.*
+> fallback (Phase 2), the parallel z-sweep + multi-CPU perm_p (Phase 3), the plotting module (Phase 4),
+> the Docker image + Nextflow process (Phase 5). Phase 1 *honors the config's `vif_correlation` flag exactly as Python does.*
 
 ## Question & object
 Given a cluster×trait genetic-correlation **long table** (one row per cluster × trait), reproduce — in R —
@@ -249,7 +249,7 @@ Unit tests per function (analytic) + real-data oracle parity on a cluster subset
 
 ## VALIDATION COMMANDS (run all; zero deterministic/control failures)
 ```bash
-# 0. deps (local R or the Phase-4 container once built)
+# 0. deps (local R or the Phase-5 container once built)
 Rscript -e 'stopifnot(all(c("poolr","data.table","yaml","argparse","testthat") %in% rownames(installed.packages())))'
 
 # 1. (re)generate the Python oracle in the reference repo

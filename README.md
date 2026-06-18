@@ -30,10 +30,14 @@ designed in the ADD but not yet built:
    (rg = S/√(diag·diag); `rg_se` via delta-method on V) + automatic trait×trait→proxy fallback.
 3. **Phase 3 — sensitivity + parallelism** *(designed)* — parallel z-threshold sweep and multi-CPU
    `perm_p` via `future`.
-4. **Phase 4 — Docker + Nextflow** *(designed)* — pinned `rocker/r-ver:4.4.2` image + `ANCHORMAP`
+4. **Phase 4 — visualization** *(designed)* — publication-ready figures (lollipop small-multiples,
+   cluster×category dot-heatmap, AUC-vs-coherence diagnostic, cross-cluster specificity heatmap +
+   diagonal) via `R/plot.R` (ggplot2), config-driven and headless, from the scored TSVs.
+5. **Phase 5 — Docker + Nextflow** *(designed)* — pinned `rocker/r-ver:4.4.2` image + `ANCHORMAP`
    process. The container/orchestration rows in CLAUDE.md remain *designed*.
 
-The project is **not yet under git** (only the vendored `claude-science-scaffold/` subdir is its own repo).
+The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendored
+`claude-science-scaffold/` subdir is gitignored (it is its own repo).
 
 ## Inputs and outputs
 
@@ -53,6 +57,8 @@ The project is **not yet under git** (only the vendored `claude-science-scaffold
   - `cluster_anchor_labels.tsv` — per cluster: `auto_label, anchor_shape, anchor_margin, anchor_focus,
     n_sig_domains, top_*`, profile.
   - `anchormap.log` — timestamped steps ending in a `FINISHED` line (status, elapsed, output manifest).
+  - `figures/` *(designed, Phase 4)* — per-track lollipop small-multiples, cluster×category
+    dot-heatmap, AUC-vs-coherence diagnostic, and cross-cluster specificity heatmap + diagonal (PNG + PDF).
 
   See [CLAUDE.md](CLAUDE.md) for the full column contracts, units, sign, and rounding rules.
 
@@ -85,8 +91,8 @@ execution order to catch up on the method (they port the reference 1:1, single z
    (weak / sharp / diffuse / focal).
 
 Driver: [anchor_map.R](anchor_map.R) — `Rscript anchor_map.R --config <yaml> [--threads N]` →
-the two TSVs + `anchormap.log`. *(Phase 3 will add `R/sensitivity.R` for the parallel z-sweep — a new
-list item anchors here.)*
+the two TSVs + `anchormap.log`. *(Phase 3 adds `R/sensitivity.R` for the parallel z-sweep; Phase 4
+adds `R/plot.R` for the figures — new list items anchor here.)*
 
 ## Data flow at a glance
 
