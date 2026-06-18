@@ -1,0 +1,45 @@
+# AnchorMap — Carey RINT-15 ANTHROPOMETRIC track (the positive control).
+# Reuses the parent cluster_anchoring config verbatim; only paths are adapted to AnchorMap:
+#   big inputs -> absolute parent-repo paths; ontology/out_dir -> AnchorMap-relative.
+# Expected result: C5_sub0 -> "Anthropometric [sharp]" (auc_abs=0.9164, pooled_rg=0.2473, vif_p=0.03489).
+
+run_label: carey_rint15_anthro
+
+# ---- inputs ----
+rg_long: "/Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/UKBB_CLUSTER_GWAS/scripts/FinnGen_PheWAS_RG/results/carey_rint_tuned_15clusters_neff_max_empirical_covz/rg/cluster_trait_rg_long_with_p.tsv"
+ontology: ontology/anthro_ontology.tsv
+out_dir: results/carey_rint15_anthro
+
+# ---- trait universe / LDSC reliability gate ----
+trait_group: disease
+require_ldsc_converged: true
+drop_negative_h2: true
+h2_z_threshold: 4.0
+
+# ---- ontology: anthro joins on trait_id; single anthro-class level ----
+ontology_key: trait_id
+levels: [anthro_class]
+primary_level: anthro_class
+min_category_n: 3
+
+# ---- competitive enrichment ----
+rank_variable: abs_z
+permutation_K: 2000
+random_seed: 1
+vif_correlation: trait_rg
+trait_rg_matrix: "/Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/projects/Northwell/project/UKBB_CLUSTER_GWAS/data/finngen_rg/finngen_R12_FIN.ldsc.summary.tsv"
+trait_rg_require_converged: true
+vif_min_rho: 0.0
+
+# ---- over-representation ----
+hit_abs_rg: 0.2
+hit_bonferroni: true
+
+# ---- auto-label rule ----
+label_q_max: 0.05
+label_auc_min: 0.60
+
+# ---- anchor shape ----
+shape_margin_sharp: 0.10
+shape_margin_diffuse: 0.05
+shape_focus_diffuse: 3.0

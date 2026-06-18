@@ -1,0 +1,45 @@
+trait_category	domain	icd_chapter	kind	anchor_eligible	notes
+I Certain infectious and parasitic diseases (AB1_)	Infectious	I	icd_chapter	TRUE
+II Neoplasms from hospital discharges (CD2_)	Neoplasms	II	icd_chapter	TRUE
+II Neoplasms, from cancer register (ICD-O-3)	Neoplasms	II	icd_chapter	TRUE	cancer-register source of the same chapter II
+III Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D3_)	Immune-blood	III	icd_chapter	TRUE
+IV Endocrine, nutritional and metabolic diseases (E4_)	Endocrine-metabolic	IV	icd_chapter	TRUE	carries obesity + T2D; risk-cluster anchor
+V Mental and behavioural disorders (F5_)	Psychiatric	V	icd_chapter	TRUE	merged with the curated psychiatric group at domain level
+VI Diseases of the nervous system (G6_)	Neurological	VI	icd_chapter	TRUE
+VII Diseases of the eye and adnexa (H7_)	Ophthalmic	VII	icd_chapter	TRUE
+VIII Diseases of the ear and mastoid process (H8_)	Otologic	VIII	icd_chapter	TRUE
+IX Diseases of the circulatory system (I9_)	Cardiovascular	IX	icd_chapter	TRUE	endpoint-cluster anchor
+X Diseases of the respiratory system (J10_)	Respiratory	X	icd_chapter	TRUE
+XI Diseases of the digestive system (K11_)	Digestive	XI	icd_chapter	TRUE
+XII Diseases of the skin and subcutaneous tissue (L12_)	Dermatologic	XII	icd_chapter	TRUE
+XIII Diseases of the musculoskeletal system and connective tissue (M13_)	Musculoskeletal	XIII	icd_chapter	TRUE	largest category (~234 traits)
+XIV Diseases of the genitourinary system (N14_)	Genitourinary	XIV	icd_chapter	TRUE
+XV Pregnancy, childbirth and the puerperium (O15_)	Reproductive-perinatal	XV	icd_chapter	TRUE
+XVI Certain conditions originating in the perinatal period (P16_)	Reproductive-perinatal	XVI	icd_chapter	TRUE
+XVII Congenital malformations, deformations and chromosomal abnormalities (Q17)	Congenital	XVII	icd_chapter	TRUE
+XVIII Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R18_)	Symptoms-illdefined	XVIII	icd_chapter	FALSE	ill-defined symptom codes; not a disease anchor
+XIX Injury, poisoning and certain other consequences of external causes (ST19_)	Injury	XIX	icd_chapter	TRUE
+XXI Factors influencing health status and contact with health services (Z21_)	Health-services	XXI	icd_chapter	FALSE	administrative/contact codes; not a disease anchor
+XXII Codes for special purposes (U22_)	Health-services	XXII	icd_chapter	FALSE	special-purpose codes; not a disease anchor
+Cardiometabolic endpoints	Cardiovascular	IX	curated_endpoint	TRUE	CAD/MI/statin-dominated; split to Cardiovascular (vs Endocrine-metabolic) is the load-bearing domain choice
+Diabetes endpoints	Endocrine-metabolic	IV	curated_endpoint	TRUE
+Comorbidities of Diabetes	Endocrine-metabolic		curated_endpoint	TRUE	cross-cutting comorbidity group; no clean ICD chapter
+Asthma and related endpoints	Respiratory	X	curated_endpoint	TRUE
+Comorbidities of Asthma	Respiratory		curated_endpoint	TRUE
+COPD and related endpoints	Respiratory	X	curated_endpoint	TRUE
+Comorbidities of COPD	Respiratory		curated_endpoint	TRUE
+Interstitial lung disease endpoints	Respiratory	X	curated_endpoint	TRUE
+Comorbidities of Interstitial lung disease endpoints	Respiratory		curated_endpoint	TRUE
+Gastrointestinal endpoints	Digestive	XI	curated_endpoint	TRUE
+Comorbidities of Gastrointestinal endpoints	Digestive		curated_endpoint	TRUE
+Neurological endpoints	Neurological	VI	curated_endpoint	TRUE
+Comorbidities of Neurological endpoints	Neurological		curated_endpoint	TRUE
+Psychiatric endpoints from Katri Räikkönen	Psychiatric	V	curated_endpoint	TRUE	merged with F5_ at domain level (the C4 hand-anchor did this manually)
+Rheuma endpoints	Musculoskeletal	XIII	curated_endpoint	TRUE	rheumatologic/autoimmune MSK
+Diseases marked as autimmune origin	Immune-blood		curated_endpoint	TRUE	cross-cutting autoimmune group (native typo 'autimmune' preserved)
+Alcohol related diseases	Alcohol-substance		curated_endpoint	TRUE	spans V psychiatric + XI hepatic; left uncollapsed
+Drug purchase endpoints	Medication-use		curated_endpoint	TRUE	prescription proxy for treated disease
+Quantitative endpoints	Quantitative		quantitative	FALSE	non-disease quantitative traits; the C5_sub0 forbidden-FP artifact
+Miscellaneous, not yet classified endpoints	Unclassified		misc	FALSE	catch-all; not a disease anchor
+Other, not yet classified endpoints (same as #MISC)	Unclassified		misc	FALSE	catch-all; not a disease anchor
+Lab values	Lab		lab	FALSE	separate (non-disease) analysis track

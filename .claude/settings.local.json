@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Rscript --version)",
+      "Bash(Rscript -e 'ip<-rownames\\(installed.packages\\(\\)\\); cat\\(sapply\\(c\\(\"poolr\",\"data.table\",\"yaml\",\"argparse\",\"testthat\",\"Matrix\",\"future\",\"future.apply\"\\), function\\(p\\) paste0\\(p,\"=\",p %in% ip\\)\\), sep=\"\\\\n\"\\)')",
+      "Bash(python3 -c 'import numpy,pandas,scipy,yaml; print\\(\"py deps OK\", numpy.__version__, pandas.__version__, scipy.__version__\\)')",
+      "Read(//private/tmp/**)",
+      "Bash(timeout 150 Rscript -e 'install.packages\\(\"poolr\", repos=\"https://cloud.r-project.org\", quiet=TRUE\\); cat\\(\"poolr installed:\", requireNamespace\\(\"poolr\", quietly=TRUE\\), \"\\\\n\"\\)')",
+      "Bash(Rscript -e 'install.packages\\(\"poolr\", repos=\"https://cloud.r-project.org\", quiet=TRUE\\); cat\\(\"poolr_installed:\", requireNamespace\\(\"poolr\", quietly=TRUE\\), \"\\\\n\"\\)')"
+    ]
+  }
+}

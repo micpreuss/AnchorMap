@@ -1,0 +1,4 @@
+trait_id	trait_label	anthro_class	anchor_eligible
+BMI_IRN	Body-mass index, inverse-rank normalized	Anthropometric	TRUE
+WEIGHT_IRN	Weight, inverse-rank normalized	Anthropometric	TRUE
+HEIGHT_IRN	Height, inverse-rank normalized	Anthropometric	TRUE

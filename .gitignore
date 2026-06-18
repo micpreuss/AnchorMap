@@ -1,0 +1,16 @@
+# Vendored scaffold — its own git repo, not part of AnchorMap
+claude-science-scaffold/
+
+# macOS
+.DS_Store
+
+# R
+.Rhistory
+.RData
+.Rapp.history
+.Rproj.user/
+*_cache/
+
+# Editor / OS
+*~
+.idea/

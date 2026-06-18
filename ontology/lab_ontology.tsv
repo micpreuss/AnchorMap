@@ -1,0 +1,387 @@
+trait_id	trait_label	analyte_class	anchor_eligible
+3048469	10-Hydroxycarbazepine [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+40771025	25-Hydroxyvitamin D3+25-Hydroxyvitamin D2 [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3030136	5-Hydroxyindoleacetate [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Other-unclassified	FALSE
+44786774	Adalimumab [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3036428	Adenosine deaminase [Enzymatic activity/volume] in Pleural fluid [u/l], sample-wise median	Enzymes-other	TRUE
+3052649	Adenosine deaminase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3006923	Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3050449	Albumin [Mass/time] in Urine collected for unspecified duration [ug/min], sample-wise median	Renal	TRUE
+3024474	Albumin [Mass/volume] in Cerebral spinal fluid [mg/l], sample-wise median	Hepatic	TRUE
+3024561	Albumin [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Hepatic	TRUE
+3028286	Albumin [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3012516	Albumin [Mass/volume] in Urine [mg/l], sample-wise median	Renal	TRUE
+3029937	Albumin [Presence] in Urine by Test strip [estimate]	Renal	TRUE
+3020682	Albumin/Creatinine [Ratio] in Urine [mg/mmol], sample-wise median	Renal	TRUE
+3027953	Aldolase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3001788	Aldosterone [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+3035995	Alkaline phosphatase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3001467	Alkaline phosphatase.bone [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3020013	Alkaline phosphatase.intestinal [Enzymatic activity/volume] in Serum or Plasma [u/l]	Hepatic	TRUE
+3035062	Alkaline phosphatase.liver 1 [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3036185	Alkaline phosphatase.liver 2 [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3035400	Alkaline phosphatase.liver [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3045684	Alkaline phosphatase.other fractions [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3026285	Alpha 1 antitrypsin [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Other-unclassified	FALSE
+3015322	Alpha 1 globulin [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3005229	Alpha 2 globulin [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3000208	Alpha tocopherol [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Vitamins-nutrients	TRUE
+3015916	Alpha-1-Fetoprotein [Units/volume] in Serum or Plasma [u/ml], sample-wise median	Tumor-markers	TRUE
+3023183	Ammonium ion [Moles/volume] in Plasma [umol/l], sample-wise median	Hepatic	TRUE
+3016771	Amylase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3017315	Amylase [Enzymatic activity/volume] in Urine [u/l], sample-wise median	Enzymes-other	TRUE
+3016417	Amylase.pancreatic [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3042810	Amyloid beta 42 peptide [Mass/volume] in Cerebral spinal fluid [ng/l], sample-wise median	Other-unclassified	FALSE
+3009991	Angiotensin converting enzyme [Enzymatic activity/volume] in Cerebral spinal fluid [u/l], sample-wise median	Enzymes-other	TRUE
+3034780	Angiotensin converting enzyme [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3039000	Anion gap in Blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3045716	Anion gap in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3000515	Antithrombin actual/normal in Platelet poor plasma by Chromogenic method [%], sample-wise median	Coagulation	TRUE
+3014791	Apolipoprotein B [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Lipids	TRUE
+3013721	Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+3011951	Aspergillus fumigatus IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3031040	Bacteria [#/volume] in Urine by Automated count [e6/l], sample-wise median	Other-unclassified	FALSE
+3004809	Band form neutrophils/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3003396	Base excess in Arterial blood by calculation [mmol/l], sample-wise median	Blood-gas	TRUE
+3012501	Base excess in Blood by calculation [mmol/l], sample-wise median	Blood-gas	TRUE
+3002032	Base excess in Venous blood by calculation [mmol/l], sample-wise median	Blood-gas	TRUE
+43055554	Base excess.100% oxygenated [Moles/volume] standard in Capillary blood by calculation [mmol/l], sample-wise median	Blood-gas	TRUE
+3006315	Basophils [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3022096	Basophils/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3043747	Beta 2 globulin [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3044355	Beta 2 glycoprotein 1 IgG Ab [Units/volume] in Serum or Plasma by Immunoassay [u/ml]	Immunoglobulin-serology	TRUE
+3013201	Beta-2-Microglobulin [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Other-unclassified	FALSE
+3008152	Bicarbonate [Moles/volume] in Arterial blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3006576	Bicarbonate [Moles/volume] in Blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3015235	Bicarbonate [Moles/volume] in Capillary blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3016293	Bicarbonate [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3027273	Bicarbonate [Moles/volume] in Venous blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3014218	Bicarbonate [Moles/volume] standard in Arterial blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3004490	Bicarbonate [Moles/volume] standard in Capillary blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3007628	Bicarbonate [Moles/volume] standard in Venous blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3034274	Bile acid [Moles/volume] in Serum --fasting [umol/l], sample-wise median	Hepatic	TRUE
+3005772	Bilirubin.conjugated [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Hepatic	TRUE
+3006140	Bilirubin.total [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Hepatic	TRUE
+3025159	Blasts/100 leukocytes in Blood [%]	Hematology	TRUE
+3008230	Borrelia burgdorferi IgM Ab [Units/volume] in Serum [au/ml]	Immunoglobulin-serology	TRUE
+3032836	C peptide [Moles/volume] in Serum or Plasma --fasting [nmol/l], sample-wise median	Glycemic	TRUE
+40759040	C peptide [Moles/volume] in Serum or Plasma --post meal [nmol/l], sample-wise median	Glycemic	TRUE
+3027923	C peptide [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Glycemic	TRUE
+42870365	C reactive protein [Mass/volume] in Blood by High sensitivity method [mg/l], sample-wise median	Inflammation	TRUE
+3051387	C reactive protein [Mass/volume] in Capillary blood [mg/l], sample-wise median	Inflammation	TRUE
+3020460	C reactive protein [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Hepatic	TRUE
+3010156	C reactive protein [Mass/volume] in Serum or Plasma by High sensitivity method [mg/l], sample-wise median	Hepatic	TRUE
+3010503	CD19 cells [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3016228	CD19 cells/100 cells in Blood [%], sample-wise median	Hematology	TRUE
+3011412	CD3 cells [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+1175426	CD3 cells/100 lymphocytes in Blood [%], sample-wise median	Hematology	TRUE
+3028167	CD3+CD4+ (T4 helper) cells [#/volume] in Blood [e6/l], sample-wise median	Endocrine-hormone	TRUE
+3001405	CD3+CD8+ (T8 suppressor) cells [#/volume] in Blood [e6/l], sample-wise median	Hematology	TRUE
+3007449	CD3+CD8+ (T8 suppressor) cells/100 cells in Blood [%], sample-wise median	Hematology	TRUE
+3025271	CD3-CD16+CD56+ (Natural killer) cells [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3027831	CD3-CD16+CD56+ (Natural killer) cells/100 cells in Blood [%], sample-wise median	Hematology	TRUE
+3006245	CD3-CD19+ cells/100 cells in Blood [%], sample-wise median	Hematology	TRUE
+3010838	Calcium [Moles/time] in 24 hour Urine [mmol/24h], sample-wise median	Electrolytes-minerals	TRUE
+3020059	Calcium [Moles/volume] corrected for albumin in Serum or Plasma [mmol/l], sample-wise median	Hepatic	TRUE
+3015377	Calcium [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+CAionComb	Calcium.ionized [Moles/volume] adjusted to pH 7.4 and not-adjusted in Blood [mmol/l], sample-wise median, Quantitative, inverse rank normalized, derived	Electrolytes-minerals	TRUE
+3048816	Calcium.ionized [Moles/volume] adjusted to pH 7.4 in Blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3016431	Calcium.ionized [Moles/volume] adjusted to pH 7.4 in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3021347	Calcium.ionized [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3048689	Calprotectin [Mass/mass] in Stool [ug/g], sample-wise median	Other-unclassified	FALSE
+3037551	Cancer Ag 125 [Units/volume] in Serum or Plasma [u/ml]	Tumor-markers	TRUE
+3006588	Cancer Ag 15-3 [Units/volume] in Serum or Plasma [u/ml]	Tumor-markers	TRUE
+42529200	Cancer Ag 15-3 [Units/volume] in Serum or Plasma by Immunoassay [u/ml], sample-wise median	Tumor-markers	TRUE
+3022914	Cancer Ag 19-9 [Units/volume] in Serum or Plasma [u/ml], sample-wise median	Tumor-markers	TRUE
+42529201	Cancer Ag 19-9 [Units/volume] in Serum or Plasma by Immunoassay [u/ml], sample-wise median	Tumor-markers	TRUE
+3027946	Carbon dioxide [Partial pressure] in Arterial blood [kpa], sample-wise median	Electrolytes-minerals	TRUE
+3013290	Carbon dioxide [Partial pressure] in Blood [kpa], sample-wise median	Electrolytes-minerals	TRUE
+3023024	Carbon dioxide [Partial pressure] in Capillary blood [kpa], sample-wise median	Electrolytes-minerals	TRUE
+3021447	Carbon dioxide [Partial pressure] in Venous blood [kpa], sample-wise median	Electrolytes-minerals	TRUE
+3028653	Carboxyhemoglobin/Hemoglobin.total in Arterial blood [%], sample-wise median	Hematology	TRUE
+3023081	Carboxyhemoglobin/Hemoglobin.total in Blood [%], sample-wise median	Hematology	TRUE
+3010517	Carboxyhemoglobin/Hemoglobin.total in Venous blood [%], sample-wise median	Hematology	TRUE
+3003785	Carcinoembryonic Ag [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Tumor-markers	TRUE
+3009041	Cardiolipin IgG Ab [Units/volume] in Serum by Immunoassay [u/ml]	Immunoglobulin-serology	TRUE
+3030467	Casts [#/volume] in Urine by Automated count [e6/l], sample-wise median	Other-unclassified	FALSE
+3023430	Cat dander IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3022756	Ceruloplasmin [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Other-unclassified	FALSE
+3018572	Chloride [Moles/volume] in Blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3014576	Chloride [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3035285	Chloride [Moles/volume] in Venous blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3019900	Cholesterol [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Lipids	TRUE
+3023602	Cholesterol in HDL [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Lipids	TRUE
+42868674	Cholesterol in HDL/Cholesterol.total [Molar ratio] in Serum or Plasma [%], sample-wise median	Lipids	TRUE
+3001308	Cholesterol in LDL [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Lipids	TRUE
+3018171	Choriogonadotropin [Units/volume] in Serum or Plasma [u/l], sample-wise median	Endocrine-hormone	TRUE
+3025577	Chromium [Mass/volume] in Blood [ug/l], sample-wise median	Other-unclassified	FALSE
+3014702	Chromogranin A [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Tumor-markers	TRUE
+3005136	Cladosporium herbarum IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3005757	Coagulation factor V activity actual/normal in Platelet poor plasma by Coagulation assay [%], sample-wise median	Coagulation	TRUE
+3011547	Coagulation factor VII activity actual/normal in Platelet poor plasma by Coagulation assay [%], sample-wise median	Coagulation	TRUE
+3019250	Coagulation factor VIII activity actual/normal in Platelet poor plasma by Coagulation assay [%], sample-wise median	Coagulation	TRUE
+3020427	Coagulation factor X inhibitor [Units/volume] in Platelet poor plasma by Coagulation assay [u/ml], sample-wise median	Coagulation	TRUE
+3009035	Cobalamin (Vitamin B12) [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3026470	Cobalt [Mass/volume] in Blood [ug/l], sample-wise median	Other-unclassified	FALSE
+3016750	Collection duration of Urine [min], sample-wise median	Other-unclassified	FALSE
+3003245	Complement C1 esterase inhibitor [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Inflammation	TRUE
+3023659	Complement C1 esterase inhibitor.functional/Complement C1 esterase inhibitor.total in Serum or Plasma [%], sample-wise median	Inflammation	TRUE
+3000620	Complement C3 [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Inflammation	TRUE
+3017766	Complement C4 [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Inflammation	TRUE
+44817194	Complement alternate pathway AH50 actual/normal in Serum by Immunoassay [%], sample-wise median	Inflammation	TRUE
+3020911	Cortisol [Moles/time] in 24 hour Urine [nmol/24h], sample-wise median	Endocrine-hormone	TRUE
+3039429	Cortisol [Moles/volume] in Saliva (oral fluid) [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3036481	Cortisol [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3007220	Creatine kinase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3005785	Creatine kinase.MB [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Cardiac	TRUE
+3020564	Creatinine [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Renal	TRUE
+3009508	Creatinine [Moles/volume] in Urine [mmol/l], sample-wise median	Renal	TRUE
+3041942	Cyclic citrullinated peptide Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3030366	Cystatin C [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Renal	TRUE
+43055120	Cytomegalovirus DNA [Units/volume] (viral load) in Serum or Plasma by NAA with probe detection [iu/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3010130	Cytomegalovirus IgG Ab [Units/volume] in Serum or Plasma [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3016616	Dehydroepiandrosterone sulfate (DHEA-S) [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Endocrine-hormone	TRUE
+3027456	Digoxin [Moles/volume] in Serum or Plasma [g/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3014133	Dog dander IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3000570	Elastase.pancreatic [Mass/mass] in Stool [ug/g], sample-wise median	Other-unclassified	FALSE
+3028531	Enolase.neuron specific [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Other-unclassified	FALSE
+3005791	Eosinophil cationic protein (ECP) [Mass/volume] in Serum [ug/l], sample-wise median	Hepatic	TRUE
+3013115	Eosinophils [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3006504	Eosinophils/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3000850	Epithelial cells [#/volume] in Urine [e6/l], sample-wise median	Other-unclassified	FALSE
+3030306	Epithelial cells.non-squamous [#/volume] in Urine by Automated count [e6/l], sample-wise median	Other-unclassified	FALSE
+3029879	Epithelial cells.squamous [#/volume] in Urine by Automated count [e6/l], sample-wise median	Other-unclassified	FALSE
+3007080	Epstein Barr virus nuclear IgG Ab [Units/volume] in Serum [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3002385	Erythrocyte distribution width [Ratio] [%], sample-wise median	Hematology	TRUE
+3019897	Erythrocyte distribution width [Ratio] by Automated count [%], sample-wise median	Hematology	TRUE
+3013707	Erythrocyte sedimentation rate by Westergren method [mm/h], sample-wise median	Inflammation	TRUE
+3048402	Erythrocytes [#/area] in Urine sediment by Automated count [u/field], sample-wise median	Hematology	TRUE
+3026361	Erythrocytes [#/volume] in Blood [e12/l], sample-wise median	Hematology	TRUE
+3027475	Erythrocytes [#/volume] in Cerebral spinal fluid [e6/l], sample-wise median	Hematology	TRUE
+3028308	Erythrocytes [#/volume] in Pleural fluid [e6/l], sample-wise median	Hematology	TRUE
+3010144	Erythrocytes [#/volume] in Synovial fluid [e6/l], sample-wise median	Hematology	TRUE
+3002582	Erythrocytes [#/volume] in Urine [e6/l], sample-wise median	Hematology	TRUE
+3024172	Erythropoietin (EPO) [Units/volume] in Serum or Plasma [u/l], sample-wise median	Other-unclassified	FALSE
+3026725	Estradiol (E2) [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3020191	Ethanol [Moles/volume] in Serum or Plasma [promille]	Other-unclassified	FALSE
+3023351	European house dust mite IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3015171	Extractable nuclear Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3018251	Fasting glucose [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Glycemic	TRUE
+3001122	Ferritin [Mass/volume] in Serum or Plasma [%], sample-wise median	Iron-studies	TRUE
+3051714	Fibrin D-dimer FEU [Mass/volume] in Platelet poor plasma [mg/l], sample-wise median	Coagulation	TRUE
+3016407	Fibrinogen [Mass/volume] in Platelet poor plasma by Coagulation assay [g/l], sample-wise median	Coagulation	TRUE
+3006270	Folate [Moles/volume] in Blood [nmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3019309	Folate [Moles/volume] in Red Blood Cells [nmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3021960	Folate [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3023323	Follitropin [Units/volume] in Serum or Plasma [iu/l], sample-wise median	Endocrine-hormone	TRUE
+42529215	Follitropin [Units/volume] in Serum or Plasma by Immunoassay [u/l], sample-wise median	Endocrine-hormone	TRUE
+3014007	Fractional oxyhemoglobin in Arterial blood [%], sample-wise median	Hematology	TRUE
+3022806	Fractional oxyhemoglobin in Capillary blood [%], sample-wise median	Hematology	TRUE
+3019230	Fractional oxyhemoglobin in Venous blood [%], sample-wise median	Hematology	TRUE
+3022493	Free Hemoglobin [Mass/volume] in Plasma [mg/l], sample-wise median	Hematology	TRUE
+3023465	Gamma globulin [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3026910	Gamma glutamyl transferase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Hepatic	TRUE
+40766183	Gliadin peptide IgA Ab [Units/volume] in Serum by Immunoassay [u/ml]	Immunoglobulin-serology	TRUE
+40766189	Gliadin peptide IgG Ab [Units/volume] in Serum by Immunoassay [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+40764999	Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum, Plasma or Blood by Creatinine-based formula (CKD-EPI) [ml/min/173m2], sample-wise median	Renal	TRUE
+46236952	Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum, Plasma or Blood by Creatinine-based formula (MDRD) [ml/min/173m2], sample-wise median	Renal	TRUE
+3020491	Glucose [Moles/volume] in Blood [mmol/l], sample-wise median	Glycemic	TRUE
+3040151	Glucose [Moles/volume] in Capillary blood [mmol/l], sample-wise median	Glycemic	TRUE
+3020044	Glucose [Moles/volume] in Cerebral spinal fluid [mmol/l], sample-wise median	Glycemic	TRUE
+3036782	Glucose [Moles/volume] in Pleural fluid [mmol/l], sample-wise median	Glycemic	TRUE
+3015024	Glucose [Moles/volume] in Serum or Plasma --1 hour post dose glucose [mmol/l], sample-wise median	Glycemic	TRUE
+3016701	Glucose [Moles/volume] in Serum or Plasma --2 hours post dose glucose [mmol/l], sample-wise median	Glycemic	TRUE
+3007821	Glucose [Moles/volume] in Serum or Plasma --baseline [mmol/l], sample-wise median	Glycemic	TRUE
+3013826	Glucose [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Glycemic	TRUE
+3038515	Glucose [Moles/volume] in Venous blood [mmol/l], sample-wise median	Glycemic	TRUE
+3009261	Glucose [Presence] in Urine by Test strip [estimate]	Glycemic	TRUE
+3020148	Glutamate decarboxylase 65 Ab [Units/volume] in Serum [iu/ml]	Immunoglobulin-serology	TRUE
+3012336	Haptoglobin [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Other-unclassified	FALSE
+3009542	Hematocrit [Volume Fraction] of Blood [%], sample-wise median	Hematology	TRUE
+3004410	Hemoglobin A1c/Hemoglobin.total in Blood [mmol/mol], sample-wise median	Glycemic	TRUE
+3029080	Hemoglobin [Entitic mass] in Reticulocytes [pg], sample-wise median	Hematology	TRUE
+3002173	Hemoglobin [Mass/volume] in Arterial blood [g/l], sample-wise median	Hematology	TRUE
+3000963	Hemoglobin [Mass/volume] in Blood [g/l], sample-wise median	Hematology	TRUE
+3006184	Hemoglobin [Mass/volume] in Capillary blood [g/l], sample-wise median	Hematology	TRUE
+3004119	Hemoglobin [Mass/volume] in Venous blood [g/l], sample-wise median	Hematology	TRUE
+3023421	Hepatitis B virus surface Ab [Units/volume] in Serum [miu/ml]	Immunoglobulin-serology	TRUE
+43054903	Holo-transcobalamin II [Moles/volume] in Serum [pmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3016724	Homocysteine [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Other-unclassified	FALSE
+3010726	Horse dander IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+40758310	Human epididymis protein 4 [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Hepatic	TRUE
+3030981	Hyaline casts [#/volume] in Urine by Automated count [e6/l], sample-wise median	Other-unclassified	FALSE
+3032080	INR in Blood by Coagulation assay [inr], sample-wise median	Coagulation	TRUE
+3007164	IgA [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3005322	IgE [Units/volume] in Serum or Plasma [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3007368	IgG [Mass/volume] in Cerebral spinal fluid [mg/l], sample-wise median	Immunoglobulin-serology	TRUE
+3005719	IgG [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3027135	IgG subclass 1 [Mass/volume] in Serum [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3028192	IgG subclass 2 [Mass/volume] in Serum [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3024139	IgG subclass 3 [Mass/volume] in Serum [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3024980	IgG subclass 4 [Mass/volume] in Serum [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3028026	IgM [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Immunoglobulin-serology	TRUE
+3016244	Insulin [Units/volume] in Serum or Plasma [mu/l], sample-wise median	Glycemic	TRUE
+3014326	Insulin-like growth factor-I [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3007847	Interleukin 2 Receptor Soluble [Units/volume] in Serum or Plasma [u/ml], sample-wise median	Other-unclassified	FALSE
+3022948	Iron [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Iron-studies	TRUE
+40763571	Iron/Transferrin [Ratio] in Serum or Plasma [%], sample-wise median	Iron-studies	TRUE
+3034860	Kappa light chains.free [Mass/volume] in Serum [mg/l], sample-wise median	Other-unclassified	FALSE
+3035350	Ketones [Presence] in Urine by Test strip [estimate]	Other-unclassified	FALSE
+3018405	Lactate [Moles/volume] in Arterial blood [mmol/l], sample-wise median	Enzymes-other	TRUE
+3047181	Lactate [Moles/volume] in Blood [mmol/l], sample-wise median	Enzymes-other	TRUE
+3028271	Lactate [Moles/volume] in Capillary blood [mmol/l], sample-wise median	Enzymes-other	TRUE
+3035999	Lactate [Moles/volume] in Cerebral spinal fluid [mmol/l], sample-wise median	Enzymes-other	TRUE
+3014111	Lactate [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Enzymes-other	TRUE
+3008037	Lactate [Moles/volume] in Venous blood [mmol/l], sample-wise median	Enzymes-other	TRUE
+40763082	Lactate dehydrogenase [Enzymatic activity/volume] in Pleural fluid by Lactate to pyruvate reaction [u/l], sample-wise median	Enzymes-other	TRUE
+3016436	Lactate dehydrogenase [Enzymatic activity/volume] in Serum or Plasma [u/l], sample-wise median	Enzymes-other	TRUE
+3022250	Lactate dehydrogenase [Enzymatic activity/volume] in Serum or Plasma by Lactate to pyruvate reaction [u/l], sample-wise median	Enzymes-other	TRUE
+3047169	Lambda light chains.free [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Other-unclassified	FALSE
+3051014	Leukocytes [#/area] in Urine sediment by Automated count [u/field], sample-wise median	Hematology	TRUE
+3010813	Leukocytes [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3016543	Leukocytes [#/volume] in Cerebral spinal fluid [e6/l], sample-wise median	Hematology	TRUE
+3023199	Leukocytes [#/volume] in Pleural fluid [e6/l], sample-wise median	Hematology	TRUE
+3000475	Leukocytes [#/volume] in Synovial fluid [e6/l], sample-wise median	Hematology	TRUE
+3018095	Leukocytes [#/volume] in Urine [e6/l], sample-wise median	Hematology	TRUE
+3013727	Leukocytes other/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3024666	Lithium [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3009214	Lutropin [Units/volume] in Serum or Plasma [u/l], sample-wise median	Endocrine-hormone	TRUE
+3019198	Lymphocytes [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3002030	Lymphocytes/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3005532	Lymphocytes/100 leukocytes in Pleural fluid [%], sample-wise median	Hematology	TRUE
+3003329	Lymphocytes/100 leukocytes in Synovial fluid [%], sample-wise median	Hematology	TRUE
+3012110	Lysozyme [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Other-unclassified	FALSE
+3035941	MCH [Entitic mass] [pg], sample-wise median	Other-unclassified	FALSE
+3003338	MCHC [Mass/volume] [g/l], sample-wise median	Other-unclassified	FALSE
+3024731	MCV [Entitic volume] [fl], sample-wise median	Other-unclassified	FALSE
+3012095	Magnesium [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3002179	Metamyelocytes/100 leukocytes in Blood [%]	Hematology	TRUE
+3006217	Methemoglobin/Hemoglobin.total in Arterial blood [%], sample-wise median	Hematology	TRUE
+3007930	Methemoglobin/Hemoglobin.total in Blood [%], sample-wise median	Hematology	TRUE
+3024889	Methemoglobin/Hemoglobin.total in Venous blood [%], sample-wise median	Hematology	TRUE
+3001604	Monocytes [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3019069	Monocytes/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3008401	Mugwort IgE Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3047826	Mullerian inhibiting substance [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Other-unclassified	FALSE
+36304997	Mycobacterium tuberculosis stimulated gamma interferon release by CD4+ and CD8+ T-cells [Units/volume] in Blood [iu/l]	Hematology	TRUE
+3017181	Myelocytes/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3005895	Myoglobin [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Other-unclassified	FALSE
+3011960	Natriuretic peptide B [Mass/volume] in Serum or Plasma [ng/l], sample-wise median	Cardiac	TRUE
+3029187	Natriuretic peptide.B prohormone N-Terminal [Mass/volume] in Serum or Plasma [ng/l], sample-wise median	Cardiac	TRUE
+3017732	Neutrophils [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3013650	Neutrophils [#/volume] in Blood by Automated count [e9/l], sample-wise median	Hematology	TRUE
+3018010	Neutrophils/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3013166	Neutrophils/100 leukocytes in Synovial fluid [%], sample-wise median	Hematology	TRUE
+3021601	Nitrite [Presence] in Urine by Test strip [estimate]	Other-unclassified	FALSE
+nonHDL	Non HDL cholesterol (TC [3019900]-HDL[3019900]) in Serum or Plasma [mmol/l], sampe-wise median, Quantitative, inverse rank normalized, derived	Lipids	TRUE
+3008832	Norclozapine [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3026179	Normetanephrine [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Other-unclassified	FALSE
+3021589	Normoblasts [#/volume] in Blood [e9/l]	Other-unclassified	FALSE
+3037522	Nuclear Ab [Titer] in Serum [titre]	Immunoglobulin-serology	TRUE
+3040370	OLANZapine [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Other-unclassified	FALSE
+3008295	Osmolality of Serum or Plasma [mosm/kgh2o], sample-wise median	Electrolytes-minerals	TRUE
+3026782	Osmolality of Urine [mosm/kgh2o], sample-wise median	Electrolytes-minerals	TRUE
+3004529	Oxygen [Partial pressure] adjusted to patient's actual temperature in Venous blood [%], sample-wise median	Blood-gas	TRUE
+3027801	Oxygen [Partial pressure] in Arterial blood [kpa], sample-wise median	Blood-gas	TRUE
+3027315	Oxygen [Partial pressure] in Blood [kpa], sample-wise median	Blood-gas	TRUE
+3028626	Oxygen [Partial pressure] in Capillary blood [kpa], sample-wise median	Blood-gas	TRUE
+3024354	Oxygen [Partial pressure] in Venous blood [kpa], sample-wise median	Blood-gas	TRUE
+40767503	Oxygen content in Capillary blood by calculation [%], sample-wise median	Blood-gas	TRUE
+3011648	Oxygen content in Venous blood [%], sample-wise median	Blood-gas	TRUE
+3016502	Oxygen saturation in Arterial blood [%], sample-wise median	Blood-gas	TRUE
+3003458	Phosphate [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+44816559	Phosphatidylethanol [Moles/volume] in Blood [umol/l], sample-wise median	Other-unclassified	FALSE
+43055225	Phosphorylated tau 181 [Mass/volume] in Cerebral spinal fluid by Immunoassay [ng/l], sample-wise median	Other-unclassified	FALSE
+3007461	Platelets [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3030905	Polymorphonuclear cells [#/volume] in Blood [e9/l], sample-wise median	Other-unclassified	FALSE
+3032035	Polymorphonuclear cells/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3006571	Polymorphonuclear cells/100 leukocytes in Synovial fluid [%], sample-wise median	Hematology	TRUE
+3043409	Potassium [Moles/volume] in Arterial blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3023103	Potassium [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3016038	Potassium [Moles/volume] in Urine [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3041354	Potassium [Moles/volume] in Venous blood [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3013742	Prealbumin [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Other-unclassified	FALSE
+3046279	Procalcitonin [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Inflammation	TRUE
+3049714	Procollagen type I.N-terminal propeptide [Mass/volume] in Serum [ug/l], sample-wise median	Other-unclassified	FALSE
+42869547	Procollagen type III.N-terminal propeptide [Mass/volume] in Serum [ug/l], sample-wise median	Other-unclassified	FALSE
+3005082	Progesterone [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3021387	Prolactin [Units/volume] in Serum or Plasma [mu/l], sample-wise median	Endocrine-hormone	TRUE
+21491979	Prolactin monomeric [Units/volume] in Serum or Plasma [mu/l], sample-wise median	Endocrine-hormone	TRUE
+3031309	Prolactin monomeric/Prolactin.total in Serum or Plasma [%], sample-wise median	Endocrine-hormone	TRUE
+3021440	Promyelocytes/100 leukocytes in Blood [%]	Hematology	TRUE
+3005013	Prostate Specific Ag Free [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Tumor-markers	TRUE
+3001784	Prostate Specific Ag Free/Prostate specific Ag.total in Serum or Plasma [%], sample-wise median	Tumor-markers	TRUE
+3013603	Prostate specific Ag [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Tumor-markers	TRUE
+3020287	Protein C actual/normal in Platelet poor plasma by Coagulation assay [%], sample-wise median	Hepatic	TRUE
+3020629	Protein S Free Ag actual/normal in Platelet poor plasma by Immunoassay [%], sample-wise median	Hepatic	TRUE
+3036669	Protein S actual/normal in Platelet poor plasma by Coagulation assay [%], sample-wise median	Hepatic	TRUE
+3020876	Protein [Mass/time] in 24 hour Urine [g/24h], sample-wise median	Other-unclassified	FALSE
+3019473	Protein [Mass/volume] in Cerebral spinal fluid [mg/l], sample-wise median	Other-unclassified	FALSE
+3003434	Protein [Mass/volume] in Pleural fluid [g/l], sample-wise median	Other-unclassified	FALSE
+3020630	Protein [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Hepatic	TRUE
+3037121	Protein [Mass/volume] in Urine [g/l], sample-wise median	Other-unclassified	FALSE
+3029713	Protein.monoclonal band 1 [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3035797	Protein.monoclonal band 2 [Mass/volume] in Serum or Plasma by Electrophoresis [g/l], sample-wise median	Hepatic	TRUE
+3029338	Protein.monoclonal band 3 [Mass/volume] in Serum or Plasma by Electrophoresis [g/l]	Hepatic	TRUE
+3033658	Prothrombin time (PT) actual/Normal [%], sample-wise median	Coagulation	TRUE
+T4_T3_ratio	Ratio of T4 (3008486) and T3 (3026989) on Serum or Plasma [pmol/l], sample-wise median, Quantitative, inverse rank normalized, derived	Endocrine-hormone	TRUE
+3011985	Renin [Units/volume] in Plasma [mu/l], sample-wise median	Endocrine-hormone	TRUE
+3023520	Reticulocytes [#/volume] in Blood [e9/l], sample-wise median	Hematology	TRUE
+3027945	Reticulocytes/100 erythrocytes in Blood [%], sample-wise median	Hematology	TRUE
+3013005	Retinol [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Vitamins-nutrients	TRUE
+3021614	Rheumatoid factor [Units/volume] in Serum or Plasma [iu/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3006999	Ribonucleoprotein extractable nuclear Ab [Units/volume] in Serum [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3017354	Segmented neutrophils/100 leukocytes in Blood [%], sample-wise median	Hematology	TRUE
+3004248	Sex hormone binding globulin [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3016921	Smith extractable nuclear Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3007566	Smooth muscle Ab [Titer] in Serum [titre]	Immunoglobulin-serology	TRUE
+3002079	Sodium [Moles/time] in 24 hour Urine [mmol/24h], sample-wise median	Electrolytes-minerals	TRUE
+3019550	Sodium [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3003181	Sodium [Moles/volume] in Urine [mmol/l], sample-wise median	Electrolytes-minerals	TRUE
+3023709	Somatotropin [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Endocrine-hormone	TRUE
+3019150	Specific gravity of Urine by Refractometry [kg/l], sample-wise median	Other-unclassified	FALSE
+3021236	Streptolysin O Ab [Units/volume] in Serum or Plasma [iu/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3026250	Tacrolimus [Mass/volume] in Blood [ug/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3000242	Tau protein [Mass/volume] in Cerebral spinal fluid [ng/l], sample-wise median	Other-unclassified	FALSE
+3018301	Testosterone Free [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+36032269	Testosterone Free [Moles/volume] in Serum or Plasma by calculation [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+3017446	Testosterone [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Endocrine-hormone	TRUE
+3006653	Thiamine [Moles/volume] in Blood [nmol/l], sample-wise median	Vitamins-nutrients	TRUE
+3036489	Thrombin time [s], sample-wise median	Coagulation	TRUE
+3025547	Thyroglobulin Ab [Units/volume] in Serum or Plasma [u/ml]	Immunoglobulin-serology	TRUE
+3027238	Thyroperoxidase Ab [Units/volume] in Serum or Plasma [iu/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3009201	Thyrotropin [Units/volume] in Serum or Plasma [mu/l], sample-wise median	Endocrine-hormone	TRUE
+3017044	Thyrotropin receptor Ab [Units/volume] in Serum [iu/l], sample-wise median	Endocrine-hormone	TRUE
+3008486	Thyroxine (T4) free [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+42868691	Thyroxine (T4) free [Moles/volume] in Serum or Plasma by Dialysis [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+3003888	Timothy IgE Ab [Units/volume] in Serum [u/ml], sample-wise median	Immunoglobulin-serology	TRUE
+3019050	Tissue transglutaminase IgA Ab [Units/volume] in Serum [u/ml]	Immunoglobulin-serology	TRUE
+3004789	Transferrin [Mass/volume] in Serum or Plasma [g/l], sample-wise median	Iron-studies	TRUE
+3015399	Transferrin receptor.soluble [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Iron-studies	TRUE
+3003031	Transferrin.carbohydrate deficient.disialo/Transferrin.total in Serum or Plasma [%], sample-wise median	Iron-studies	TRUE
+3048773	Triglyceride [Moles/volume] in Serum or Plasma --fasting [mmol/l], sample-wise median	Lipids	TRUE
+3025839	Triglyceride [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Lipids	TRUE
+3026989	Triiodothyronine (T3) Free [Moles/volume] in Serum or Plasma [pmol/l], sample-wise median	Endocrine-hormone	TRUE
+3021337	Troponin I.cardiac [Mass/volume] in Serum or Plasma [ng/l], sample-wise median	Cardiac	TRUE
+3019800	Troponin T.cardiac [Mass/volume] in Serum or Plasma [ng/l], sample-wise median	Cardiac	TRUE
+3019420	Tryptase [Mass/volume] in Serum or Plasma [ug/l], sample-wise median	Inflammation	TRUE
+3026493	Urate [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Renal	TRUE
+3020779	Urea [Moles/volume] in Serum or Plasma [mmol/l], sample-wise median	Renal	TRUE
+3009466	Valproate [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3005715	Vancomycin [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3022575	Varicella zoster virus IgG Ab [Units/volume] in Serum [miu/ml]	Immunoglobulin-serology	TRUE
+3004775	Volume in Urine collected for unspecified duration [ml], sample-wise median	Other-unclassified	FALSE
+3012565	Volume of 24 hour Urine [ml], sample-wise median	Other-unclassified	FALSE
+3020717	Zinc [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Electrolytes-minerals	TRUE
+3018677	aPTT in Platelet poor plasma by Coagulation assay [s], sample-wise median	Coagulation	TRUE
+3018980	carBAMazepine [Moles/volume] in Serum or Plasma [umol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3000081	cloZAPine [Moles/volume] in Serum or Plasma [nmol/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3010375	cycloSPORINE [Mass/volume] in Blood [ug/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+egfr_ckdepi2021	eGFR values estimated from harmonized creatinine [3020564] values using 2009 formula [ml/min/173m2], sample-wise median, Quantitative, inverse rank normalized, derived	Renal	TRUE
+egfr_ckdepi2009	eGFR values estimated from harmonized creatinine [3020564] values using 2021 formula [ml/min/173m2], sample-wise median, Quantitative, inverse rank normalized, derived	Renal	TRUE
+3042299	inFLIXimab [Mass/volume] in Serum or Plasma [mg/l], sample-wise median	Therapeutic-drug-monitoring	FALSE
+3010421	pH of Blood [ph], sample-wise median	Blood-gas	TRUE
+3009343	pH of Capillary blood [ph], sample-wise median	Blood-gas	TRUE
+3018418	pH of Serum or Plasma [ph], sample-wise median	Blood-gas	TRUE
+3036035	von Willebrand factor (vWf) Ag actual/normal in Platelet poor plasma by Immunoassay [%], sample-wise median	Coagulation	TRUE
+40770918	von Willebrand factor (vWf).activity actual/normal in Platelet poor plasma by Immunoassay [%], sample-wise median	Coagulation	TRUE
