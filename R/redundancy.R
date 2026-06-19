@@ -1,13 +1,13 @@
-# redundancy.R — within-category correlation matrix + Li & Ji n_eff + mean pairwise rho.
+# redundancy.R - within-category correlation matrix + Li & Ji n_eff + mean pairwise rho.
 # Ports load_trait_rg_matrix (L138-156), build_trait_profile_corr (L130-135),
 # meff_li_ji (L159-173) and rho_bar (L176-184).
 #
 # n_eff: the engine uses a Python-matching implementation (eigen + clip negative eigenvalues),
 # because the parity gate requires it on possibly non-PD matrices (NaN->0 off-diagonals).
 # `poolr::meff(R,"liji")` computes the same formula and is asserted to agree on clean matrices in
-# the test suite — but it does not clip, so it is a cross-check, not the parity primary.
+# the test suite - but it does not clip, so it is a cross-check, not the parity primary.
 
-# Actual trait x trait genetic-correlation matrix from a FinnGen LDSC --rg summary.
+# Actual trait x trait genetic-correlation matrix from an LDSC --rg summary
 # (cols p1,p2,rg,CONVERGED). Symmetric trait_id x trait_id; missing pairs stay NA; diag = 1.
 build_trait_rg_matrix <- function(path, traits, require_converged = TRUE) {
   traits <- unique(as.character(traits))
@@ -55,14 +55,14 @@ reindex_corr <- function(corr, ids) {
   M
 }
 
-# Clean a correlation submatrix the way numpy meff_li_ji does: non-finite -> 0, diag 1, symmetrize.
+# Clean a correlation submatrix before the eigen step: non-finite -> 0, diag 1, symmetrize.
 .clean_corr <- function(R) {
   R[!is.finite(R)] <- 0
   diag(R) <- 1
   (R + t(R)) / 2
 }
 
-# Li & Ji (2005) effective number of independent tests. Clips eigenvalues >= 0 to match numpy.
+# Li & Ji (2005) effective number of independent tests. Clips eigenvalues at 0 (non-PD inputs).
 meff_liji <- function(R) {
   m <- nrow(R)
   if (is.null(m) || m < 2) return(as.numeric(if (is.null(m)) 0 else m))
@@ -114,7 +114,7 @@ identity_corr <- function(tids) {
 #   "cluster_profile" -> the rg-profile proxy; Phase-1 behaviour.
 #   "auto"            -> trait_rg if coverage >= vif_coverage_min, else proxy if >=3 clusters, else
 #                        identity (VIF=1) + loud WARN.
-# Returns list(corr, source, coverage, reason). VIF affects only vif_p / CI width downstream — never
+# Returns list(corr, source, coverage, reason). VIF affects only vif_p / CI width downstream - never
 # the AUC, ranks, pooled_rg point estimate or coherence (asserted in the Phase-2 tests).
 select_corr_source <- function(g, cfg, sroot, trait_rg_override = NULL, emit = message) {
   tids       <- unique(g[["trait_id"]])

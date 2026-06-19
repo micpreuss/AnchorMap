@@ -6,16 +6,18 @@
 sensitivity z-sweep → ggplot2 figures) as a single pinned, reproducible container. **This image *is*
 the tool** — the primary way to run AnchorMap:
 
+The image installs the `anchormap` R package and puts `anchor_map` / `plot_anchors` shims on `PATH`:
+
 ```bash
 # engine (rg long-TSV or GenomicSEM .rds route, per your config)
 docker run --rm -v "$PWD:/work" -w /work \
     anchormap:0.1.0 \
-    Rscript /opt/anchormap/anchor_map.R --config configs/your_run.yaml --threads 4
+    anchor_map --config configs/your_run.yaml --out-dir results/your_run --threads 4
 
 # figures (reads the scored TSVs the engine wrote)
 docker run --rm -v "$PWD:/work" -w /work \
     anchormap:0.1.0 \
-    Rscript /opt/anchormap/R/plot_anchors.R --config configs/your_run_plots.yaml
+    plot_anchors --config configs/your_run_plots.yaml --out-dir results/your_run/figures
 ```
 
 Nextflow is **not** how you run AnchorMap — there is no DAG to orchestrate. The [`nextflow/`](../nextflow/)
@@ -57,11 +59,11 @@ Same three fixes the parent project's `postgwas` image needs to run under Nextfl
   (a plain named list `$S`/`$V`/`$I`) with base `readRDS()`. AnchorMap *consumes* the artifact; it does
   not *run* `ldsc()` (explicitly out of scope, ADD §5). Omitting it removes a heavy GitHub install + its
   dependency tree + a pinning surface. Reintroduce it only if a future stage runs `ldsc()` inside AnchorMap.
-- **`argparse` / `optparse`.** Both CLIs hand-roll their argument parsing (`anchor_map.R`, `R/plot_anchors.R`).
+- **`argparse` / `optparse`.** Both CLIs hand-roll their argument parsing (`R/cli.R`).
 
 ## Build-time self-tests (the build fails on regression)
 
-The build runs the self-contained synthetic fixture (`tests/fixtures/synthetic_ldsc_panel.rds`, no
+The build runs the self-contained synthetic fixture (`inst/fixtures/synthetic_ldsc_panel.rds`, no
 external data) twice:
 
 1. **Engine** — must recover `C5_sub0 → anthro [sharp]` and a `FINISHED ok` log.

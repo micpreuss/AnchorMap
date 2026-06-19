@@ -210,21 +210,35 @@ ontology TSV  ───────────┘                              
 
 ## Running stages
 
+**The tool is now an installable R package (`anchormap`).** Entry points: `run_anchormap()` /
+`run_plots()` / `run_sensitivity()` (library) and the `anchor_map` / `plot_anchors` CLI shims (or
+`Rscript inst/scripts/*.R`). There is no top-level `anchor_map.R` any more; `--config` accepts a YAML
+path **or** a bare shipped-config name (resolved from `inst/configs/`). Machine-specific Carey/FinnGen
+configs live in the gitignored `local/configs/`.
+
 ```bash
-# Engine — bare R (host):
-Rscript anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4
+# Install the package (host):
+R CMD INSTALL .            # or: remotes::install_github("micpreuss/AnchorMap")
+
+# Engine (host, after install) — bare config name resolves to inst/configs, or pass a YAML path:
+anchor_map --config synthetic_rds --out-dir results/synthetic_rds --threads 4
+#  (without the PATH shim:  Rscript inst/scripts/anchor_map.R --config synthetic_rds --out-dir ... )
+#  your real runs:  anchor_map --config local/configs/carey_rint15_anthro.yaml --out-dir results/...
 
 # Engine — via the pinned image (THE primary, reproducible run interface; mount cwd as /work):
 docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
-  Rscript /opt/anchormap/anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4
+  anchor_map --config synthetic_rds --out-dir results/synthetic_rds --threads 4
 
-# Phase-4 figures (reads the scored TSVs the engine wrote; PNG+PDF into results/<run>/figures/):
-Rscript R/plot_anchors.R --config configs/carey_rint15_plots.yaml
+# Figures (reads the scored TSVs the engine wrote; PNG+PDF into the --out-dir):
+plot_anchors --config synthetic_rds_plots --out-dir results/synthetic_rds/figures
 
-# Phase-5 build the image (build IS the self-test: C5_sub0 anthro sharp + a figure render):
+# Tests (testthat; load_all harness so internals are visible):
+Rscript -e 'testthat::test_local()'
+
+# Build the image (build IS the self-test: C5_sub0 anthro sharp + a figure render):
 docker build -t anchormap:0.1.0 -f docker/Dockerfile .          # release: add --platform linux/amd64
 
-# Phase-5 Nextflow container-validation harness (NOT how you run AnchorMap):
+# Nextflow container-validation harness (NOT how you run AnchorMap):
 nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml   # local CI gate
 # nextflow run nextflow/main.nf -profile gcp -params-file nextflow/params/gcp.yaml   # one-time Batch/FUSE check (needs push + GCP creds)
 
@@ -241,7 +255,8 @@ Rscript validation/compare_oracle.R --r-out results/.../category_anchor_scores.t
 
 ## Validation / testing
 
-No unit-test suite exists yet; the designed validation:
+The `testthat` suite lives in [tests/testthat/](tests/testthat/) (run `Rscript -e 'testthat::test_local()'`);
+it ports the former analytic/Phase-2/Phase-3 scripts. The validation:
 - **Positive control (the gate):** C5_sub0 anthro → "Anthropometric [sharp]" with the exact real-run values:
   `auc_abs=0.9164, n_eff=3.0, rho_bar=0.443, vif=1.89, vif_p=0.03489021688956177, pooled_rg=0.2473 [0.1965,0.2968],
   coherence=1.0, odds_ratio=3.523, q≈0.005497, rank=1`.
@@ -256,6 +271,7 @@ No unit-test suite exists yet; the designed validation:
 ## Key files to know
 
 - [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) — the ADD (question, schemas, methods, controls, phases). **Source of truth.**
+- [README.production.md](README.production.md) — the detailed dev/provenance README (phase history, validation, full schemas). The visible [README.md](README.md) is the de-branded public front page; **keep dev notes in the production copy.**
 - [.agents/plans/anchormap-phase1-r-engine-port.md](.agents/plans/anchormap-phase1-r-engine-port.md) — the next build, with the full Python→R function mapping and oracle values.
 - [`../UKBB_CLUSTER_GWAS/scripts/cluster_anchoring/anchor_categories.py`](../UKBB_CLUSTER_GWAS/scripts/cluster_anchoring/anchor_categories.py) — the reference engine (bit-for-bit spec).
 - Parent configs/ontologies/oracle: `../UKBB_CLUSTER_GWAS/scripts/cluster_anchoring/{configs,ontology,output,docs/approach.md}/`.

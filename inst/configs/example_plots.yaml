@@ -1,0 +1,23 @@
+# AnchorMap — EXAMPLE figures config. Renders the anchoring + cross-cluster specificity figures
+# from scored TSVs (it does NOT re-run the engine). Point each track at the engine's out_dir, then:
+#   plot_anchors --config example_plots.yaml --out-dir results/figures
+
+out_dir: results/figures
+top_k: 8                  # categories per lollipop panel
+lollipop_ncols: 3
+scatter: true            # AUC-vs-coherence diagnostic (surfaces sign-split classes)
+rg_cap: 0.55             # symmetric colour limit for signed pooled_rg
+# specificity gate (overridable on the CLI: --q-sig / --rg-floor / --min-clusters)
+q_sig: 0.05
+spec_rg_floor: 0.10      # min |pooled_rg| for an anchor to count toward the cross-cluster z
+spec_min_clusters: 5     # a category must be scored in >= this many clusters for a stable z
+
+tracks:
+  - name: disease
+    level: domain
+    scores: results/disease/category_anchor_scores.tsv
+    labels: results/disease/cluster_anchor_labels.tsv
+  - name: anthro
+    level: anthro_class
+    scores: results/anthro/category_anchor_scores.tsv
+    labels: results/anthro/cluster_anchor_labels.tsv

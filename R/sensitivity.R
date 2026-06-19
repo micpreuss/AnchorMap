@@ -1,4 +1,4 @@
-# sensitivity.R — Phase-3 parallel z-threshold sensitivity sweep.
+# sensitivity.R - Phase-3 parallel z-threshold sensitivity sweep.
 #
 # Re-runs the whole single-z engine (gate -> redundancy -> score -> label) at each h2-reliability
 # threshold in the z-vector, in parallel over z via future.apply, then stacks the two output tables
@@ -8,19 +8,17 @@
 # the exact cluster x level loop order of anchor_map.R. Hence (a) the z == h2_z_threshold task
 # reproduces the Phase-1/2 single-z output bit-for-bit (incl. perm_p), and (b) the whole sweep is
 # invariant to worker count AND backend. future.seed=TRUE only silences the parallel-RNG warning;
-# the inner set.seed dominates. score.R / label.R are deliberately untouched — perm_p stays serial
-# so its RNG stream matches the legacy run; the sweep parallelizes the OUTER z axis only.
-
-suppressPackageStartupMessages({ library(future.apply) })
+# the inner set.seed dominates. score.R / label.R are deliberately untouched - perm_p stays serial
+# so its RNG stream matches the single-z run; the sweep parallelizes the OUTER z axis only.
 
 # Map FUN over X with `threads` workers via future.apply. workers==1 -> sequential plan (plan
 # selection, NOT an availability fallback; future.apply is a hard dependency). setDTthreads(1)
 # avoids data.table x workers oversubscription.
 #
 # future.globals = FALSE: we use only `sequential` and `multicore` (fork) plans, so the worker sees
-# the parent's globals directly (same process / fork-inherited memory) — no export needed. This also
-# sidesteps future's globals scanner, which trips over the engine functions sourced into globalenv.
-# (It would be unsafe only under multisession/cluster plans, which parallel_lapply never selects.)
+# the calling process's globals directly (fork-inherited memory) - no export needed, and it sidesteps
+# future's globals scanner. (It would be unsafe only under multisession/cluster plans, which
+# parallel_lapply never selects.)
 parallel_lapply <- function(X, FUN, threads = 1L) {
   workers <- max(1L, min(as.integer(threads), length(X)))
   data.table::setDTthreads(1L)
@@ -38,12 +36,25 @@ parallel_lapply <- function(X, FUN, threads = 1L) {
              top_coherence = NA_real_, profile = "", stringsAsFactors = FALSE)
 }
 
-# Score the whole engine at a single reliability threshold z. Deterministic: set.seed(random_seed)
-# then the exact cluster x level loop of anchor_map.R, so z == h2_z_threshold reproduces the legacy
-# single-z output bit-for-bit. Returns ranked/labels (NULL when nothing scored) + per-z metadata.
+#' Score the engine at a single reliability threshold
+#'
+#' Runs the full single-z engine (gate -> redundancy -> score -> label) at one h2-reliability
+#' threshold `z`. Deterministic: re-seeds with `cfg$random_seed` and preserves the exact
+#' cluster x level loop order, so `z == cfg$h2_z_threshold` reproduces the single-z primary output
+#' bit-for-bit.
+#'
+#' @param df Gated long-table data frame (Input A schema).
+#' @param ont Ontology data frame (read by `read_ontology()`).
+#' @param cfg Config list (from `load_config()`).
+#' @param sroot Stage root for resolving relative paths.
+#' @param z Numeric h2-reliability threshold.
+#' @param trait_rg_override Optional precomputed trait x trait rg matrix.
+#' @param emit Logging function (default [message()]).
+#' @return A list with `ranked`, `labels`, and per-z metadata.
+#' @export
 score_at_z <- function(df, ont, cfg, sroot, z, trait_rg_override = NULL, emit = message) {
   # Pin the RNG to R's defaults BEFORE seeding: future.seed=TRUE switches the kind to L'Ecuyer-CMRG,
-  # and set.seed(seed) with no `kind` keeps the current kind — so without this the sweep would draw
+  # and set.seed(seed) with no `kind` keeps the current kind - so without this the sweep would draw
   # from a different generator than the legacy serial run and perm_p would not match.
   set.seed(as.integer(cfg[["random_seed"]]),
            kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rejection")
@@ -65,12 +76,19 @@ score_at_z <- function(df, ont, cfg, sroot, z, trait_rg_override = NULL, emit = 
   out(rl[["ranked"]], rl[["labels"]], sel[["source"]], sel[["coverage"]])
 }
 
-# Parallel z-sweep. Re-runs score_at_z over sort(unique(c(z_vector, h2_z_threshold))) (the primary z
-# is always folded in, so the parity slice always exists), stacks the two tables with a z_threshold
-# column, pads every z's labels to the union cluster set (so a cluster gated out at some z still shows
-# ambiguous/weak there), and flags per-cluster label_stable (auto_label constant across all swept z).
-# Returns the stacked frames (eligible/label_stable left logical for the driver's write contract), the
-# z == primary slice (for the primary TSVs, from the SAME computation), and per-z metadata for logging.
+#' Parallel reliability-threshold sensitivity sweep
+#'
+#' Re-runs [score_at_z()] over `sort(unique(c(z_vector, cfg$h2_z_threshold)))` in parallel over z
+#' (the primary z is always folded in, so the primary slice always exists), stacks the two output
+#' tables with a `z_threshold` column, pads every z's labels to the union cluster set, and flags
+#' per-cluster `label_stable` (auto_label constant across all swept z).
+#'
+#' @inheritParams score_at_z
+#' @param z_vector Numeric vector of h2-reliability thresholds to sweep.
+#' @param threads Worker count for the z-axis (uses `future` multicore/sequential).
+#' @return A list with stacked `scores`/`labels`, the `primary` (z == primary) result, `zs`, and
+#'   per-z `meta`.
+#' @export
 run_sensitivity <- function(df, ont, cfg, sroot, z_vector, threads = 1L,
                             trait_rg_override = NULL, emit = message) {
   z_primary <- as.numeric(cfg[["h2_z_threshold"]])

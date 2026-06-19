@@ -1,7 +1,7 @@
-# label.R — BH-FDR, ranking, auto-label, and anchor-shape.
+# label.R - BH-FDR, ranking, auto-label, and anchor-shape.
 # Ports bh_fdr (L285-295), anchor_shape (L301-329) and rank_and_label (L332-374).
 
-# Benjamini-Hochberg q-values (hand-rolled to bit-match the numpy reference; == p.adjust("BH")).
+# Benjamini-Hochberg q-values (hand-rolled; equals stats::p.adjust(method = "BH")).
 bh_fdr <- function(pvals) {
   p <- as.numeric(pvals); n <- length(p)
   if (n == 0) return(numeric(0))

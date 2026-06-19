@@ -1,4 +1,4 @@
-# score.R — competitive enrichment per (cluster, level, category).
+# score.R - competitive enrichment per (cluster, level, category).
 # Ports auc_from_ranks (L190-192), perm_null_sums (L195-202) and score_cluster_level (L205-282).
 
 # Mann-Whitney U expressed via summed ranks -> AUC = P(in beats out).
@@ -8,8 +8,8 @@ auc_from_ranks <- function(ranks_in, n_in, n_out) {
 }
 
 # K label-permutation null sums of n_in ranks drawn without replacement.
-# RNG stream differs from numpy, so perm_p is reproducible within R but only MC-close to the
-# Python reference (the parity gate anchors on the deterministic vif_p instead).
+# perm_p is reproducible within a fixed RNG seed but Monte-Carlo in nature; deterministic anchoring
+# relies on vif_p, not perm_p.
 perm_null_sums <- function(rank_vec, n_in, K) {
   N <- length(rank_vec)
   vapply(seq_len(K), function(k) sum(rank_vec[sample.int(N, n_in)]), numeric(1))

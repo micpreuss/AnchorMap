@@ -1,28 +1,21 @@
-# plot.R — AnchorMap Phase 4 figures (ggplot2 port of the reference plot_*.py).
+# plot.R - AnchorMap figures (ggplot2).
 #
 # Pure re-encoding of the scored TSVs (category_anchor_scores.tsv + cluster_anchor_labels.tsv):
-# no statistic is recomputed. Ports three reference scripts into one module —
-#   plot_anchors.py             -> fig_lollipops · fig_dotheatmap · fig_scatter
-#   plot_specificity.py         -> specificity · distinctive_table · fig_specificity
-#   plot_specificity_diagonal.py-> diagonal_column_order · fig_diagonal
-# Four channels are load-bearing and kept distinct (AUC and pooled_rg are NOT redundant — they
+# no statistic is recomputed. Three figure families in one module -
+#   fig_lollipops / fig_dotheatmap / fig_scatter      (cluster-wise anchoring)
+#   specificity / distinctive_table / fig_specificity (cross-cluster distinctiveness)
+#   diagonal_column_order / fig_diagonal              (the diagonal reduction)
+# Four channels are load-bearing and kept distinct (AUC and pooled_rg are NOT redundant - they
 # diverge at sign-split classes): AUC = x-position/size, signed pooled_rg = diverging colour,
 # coherence = alpha, q<q_sig = ring/mask. Headless (cairo/ragg); deterministic (no RNG).
 
-suppressPackageStartupMessages({
-  library(data.table)
-  library(ggplot2)
-  library(patchwork)
-  library(scales)
-})
-
-# Diverging colour endpoints (match matplotlib RdBu_r / PuOr_r tails, reversed -> low/high).
+# Diverging colour endpoints (RdBu_r / PuOr_r tails, reversed -> low/high).
 .RG_LOW   <- "#2166AC"; .RG_HIGH   <- "#B2182B"   # blue (-) -> red (+)   signed rg
 .SPEC_LOW <- "#542788"; .SPEC_HIGH <- "#B35806"   # purple (-) -> orange (+)  specificity z
 .NA_GREY  <- "grey90"
 
 # ---- ordering ports --------------------------------------------------------
-# Natural cluster order: C0, C1, C2_sub0, C2_sub1, … then noise_re0…N last, others last
+# Natural cluster order: C0, C1, C2_sub0, C2_sub1, ... then noise_re0...N last, others last
 # (mirror plot_anchors.natural_order; bare C5 sorts before C5_sub0 via sub index -1).
 natural_order <- function(labels) {
   labels <- unique(as.character(labels))
@@ -47,7 +40,7 @@ leaf_order <- function(mat) {
   rn[hc$order]
 }
 
-# Population SD (ddof=0), matching numpy/pandas .std(ddof=0) used in plot_specificity.specificity.
+# Population standard deviation (divide by N, not N-1) used in the cross-cluster specificity z.
 .sd_pop <- function(x) { x <- x[is.finite(x)]; if (length(x) < 1) return(NA_real_); sqrt(mean((x - mean(x))^2)) }
 
 # ---- track loader ----------------------------------------------------------
@@ -101,7 +94,7 @@ fig_lollipops <- function(track, row_order, cfg) {
     sub[["sig"]] <- sub[["q"]] < q_sig
     sub[["isauto"]] <- sub[["category"]] == auto
     lb <- lab_idx[cl]
-    ttl <- sprintf("%s  —  %s [%s]", cl, lb[["auto_label"]], lb[["anchor_shape"]])
+    ttl <- sprintf("%s  -  %s [%s]", cl, lb[["auto_label"]], lb[["anchor_shape"]])
     ggplot(sub) +
       geom_vline(xintercept = 0.5, colour = "grey70", linewidth = 0.3) +
       geom_segment(aes(x = 0.5, xend = auc_abs, y = y, yend = y, colour = pooled_rg, alpha = a),
@@ -127,7 +120,7 @@ fig_lollipops <- function(track, row_order, cfg) {
   pw <- patchwork::wrap_plots(panels, ncol = cfg[["lollipop_ncols"]]) +
     patchwork::plot_layout(guides = "collect") +
     patchwork::plot_annotation(title = sprintf(
-      "Cluster anchoring — %s track (AUC lead; colour = signed rg, alpha = coherence, ring = q<%.2g)",
+      "Cluster anchoring - %s track (AUC lead; colour = signed rg, alpha = coherence, ring = q<%.2g)",
       track[["name"]], q_sig))
   pw & theme(legend.position = "right")
 }
@@ -167,7 +160,7 @@ fig_dotheatmap <- function(tracks, row_order, cfg) {
   pw <- patchwork::wrap_plots(panels, nrow = 1) +
     patchwork::plot_layout(guides = "collect") +
     patchwork::plot_annotation(title = sprintf(
-      "Cluster anchoring — dot-heatmap (size = AUC, colour = signed rg, edge = q<%.2g, alpha = coherence, * = auto-label)",
+      "Cluster anchoring - dot-heatmap (size = AUC, colour = signed rg, edge = q<%.2g, alpha = coherence, * = auto-label)",
       q_sig))
   pw
 }
@@ -202,7 +195,7 @@ fig_scatter <- function(tracks, cfg) {
   patchwork::wrap_plots(panels, nrow = 1) +
     patchwork::plot_layout(guides = "collect") +
     patchwork::plot_annotation(title =
-      "AUC vs coherence — top-left = high enrichment but sign-split (opposition) classes")
+      "AUC vs coherence - top-left = high enrichment but sign-split (opposition) classes")
 }
 
 # ---- specificity (cross-cluster distinctiveness) ---------------------------
@@ -285,7 +278,7 @@ fig_specificity <- function(spec, row_order, name, cap = 2.5) {
   }
   p + scale_x_discrete(labels = function(x) .short(x, 22)) +
     labs(x = NULL, y = NULL, title = sprintf(
-      "Cluster specificity — %s track\nz of pooled rg within each category across clusters (grey = not significant; box = most distinctive)",
+      "Cluster specificity - %s track\nz of pooled rg within each category across clusters (grey = not significant; box = most distinctive)",
       name)) +
     theme_minimal(base_size = 8) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6.5),
@@ -316,7 +309,7 @@ fig_diagonal <- function(spec, row_order, name, cap = 2.5) {
     scale_x_discrete(labels = function(x) .short(x, 22), drop = FALSE) +
     scale_y_discrete(drop = FALSE) +
     labs(x = NULL, y = NULL, title = sprintf(
-      "Cluster specificity (diagonal) — %s track\nmost-distinctive significant domain per cluster; columns ordered for diagonal discrimination",
+      "Cluster specificity (diagonal) - %s track\nmost-distinctive significant domain per cluster; columns ordered for diagonal discrimination",
       name)) +
     theme_minimal(base_size = 8) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
@@ -326,12 +319,12 @@ fig_diagonal <- function(spec, row_order, name, cap = 2.5) {
 # ---- helpers ---------------------------------------------------------------
 .short <- function(s, n = 24) {
   s <- as.character(s)
-  ifelse(nchar(s) <= n, s, paste0(substr(s, 1, n - 1), "…"))
+  ifelse(nchar(s) <= n, s, paste0(substr(s, 1, n - 1), "..."))
 }
 
 # Write a ggplot/patchwork object to PNG (+ PDF unless pdf=FALSE). Headless: ragg if present,
 # else cairo. Returns the PNG path. The deliberate axis crops (lollipop xlim 0.5-1.0, scatter
-# 0.45-1.0) drop depleted off-axis points exactly as the reference matplotlib set_xlim does — that
+# 0.45-1.0) drop depleted off-axis points exactly as the reference matplotlib set_xlim does - that
 # "removed N rows outside the scale range" message is intended, so it is muffled here.
 save_fig <- function(plot, png_path, width, height, pdf = TRUE) {
   png_dev <- if (requireNamespace("ragg", quietly = TRUE)) ragg::agg_png else
@@ -345,4 +338,90 @@ save_fig <- function(plot, png_path, width, height, pdf = TRUE) {
                       width = width, height = height, units = "in", limitsize = FALSE)
   })
   png_path
+}
+
+# ---- driver ----------------------------------------------------------------
+#' Render the AnchorMap figures from scored TSVs
+#'
+#' Reads a plot YAML config (`out_dir` + `tracks: [{name, level, scores, labels}]`) and writes the
+#' cluster-anchoring lollipops, dot-heatmap, AUC-vs-coherence scatter, and cross-cluster specificity
+#' heatmap + diagonal (PNG + PDF) plus `cluster_distinctive_categories.tsv` into `out_dir`. Does not
+#' re-run the engine - it only re-encodes the scored TSVs.
+#'
+#' @param config_path Path to a plot YAML config (or a bare shipped-config name).
+#' @param q_sig,rg_floor,min_clusters Optional overrides of the significance gate.
+#' @param out_dir Optional output-directory override (else `cfg$out_dir`).
+#' @return Invisibly, the character vector of written file paths.
+#' @export
+run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters = NULL,
+                      out_dir = NULL) {
+  options(bitmapType = "cairo")
+  config_path <- resolve_config_path(config_path)
+  cfg   <- yaml::read_yaml(config_path)
+  sroot <- stage_root_of(config_path)
+  defaults <- list(top_k = 8, lollipop_ncols = 3, scatter = TRUE, rg_cap = 0.55, q_sig = 0.05,
+                   spec_rg_floor = 0.10, spec_min_clusters = 5)
+  for (k in names(defaults)) if (is.null(cfg[[k]])) cfg[[k]] <- defaults[[k]]
+  if (!is.null(q_sig))        cfg[["q_sig"]] <- q_sig
+  if (!is.null(rg_floor))     cfg[["spec_rg_floor"]] <- rg_floor
+  if (!is.null(min_clusters)) cfg[["spec_min_clusters"]] <- min_clusters
+
+  out_dir <- if (!is.null(out_dir)) .abs_cwd(out_dir) else resolve_path(sroot, cfg[["out_dir"]])
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  written <- character(0)
+  emit <- function(p) { message(sprintf("[write] %s", p)); written[[length(written) + 1L]] <<- p }
+
+  tracks <- lapply(cfg[["tracks"]], load_track, stage_root = sroot)
+  row_order <- natural_order(unlist(lapply(tracks, function(tr) tr[["s"]][["cluster_label"]])))
+
+  # 1. lollipops (per track)
+  for (tr in tracks) {
+    nc   <- min(cfg[["lollipop_ncols"]], length(unique(tr[["s"]][["cluster_label"]])))
+    n_cl <- length(intersect(row_order, unique(tr[["s"]][["cluster_label"]])))
+    nrw  <- ceiling(n_cl / max(nc, 1))
+    p <- fig_lollipops(tr, row_order, cfg)
+    png <- file.path(out_dir, sprintf("anchor_lollipops_%s.png", tr[["name"]]))
+    save_fig(p, png, width = nc * 3.6 + 1.5, height = nrw * 2.3 + 0.6); emit(png)
+  }
+
+  # 2. dot-heatmap (combined)
+  totcats <- sum(vapply(tracks, function(tr) length(unique(tr[["s"]][["category"]])), integer(1)))
+  png <- file.path(out_dir, "anchor_dotheatmap.png")
+  save_fig(fig_dotheatmap(tracks, row_order, cfg), png,
+           width = totcats * 0.34 + 3.5, height = length(row_order) * 0.34 + 2.2); emit(png)
+
+  # 3. AUC-vs-coherence scatter (combined)
+  if (isTRUE(cfg[["scatter"]])) {
+    png <- file.path(out_dir, "anchor_auc_coherence.png")
+    save_fig(fig_scatter(tracks, cfg), png, width = length(tracks) * 4.6, height = 4.4); emit(png)
+  }
+
+  # 4-5. specificity heatmap + diagonal (per track) + distinctive table
+  dist_all <- list()
+  for (tr in tracks) {
+    spec <- specificity(tr[["s"]], cfg[["q_sig"]], cfg[["spec_rg_floor"]], cfg[["spec_min_clusters"]])
+    ro   <- natural_order(rownames(spec[["M"]]))
+    ncat <- ncol(spec[["Z"]])
+    png  <- file.path(out_dir, sprintf("anchor_specificity_%s.png", tr[["name"]]))
+    save_fig(fig_specificity(spec, ro, tr[["name"]]), png,
+             width = ncat * 0.42 + 3.5, height = length(ro) * 0.34 + 2.0); emit(png)
+    pd <- fig_diagonal(spec, ro, tr[["name"]])
+    if (is.null(pd)) {
+      message(sprintf("[skip] anchor_specificity_diagonal_%s - no significant distinctive cells",
+                      tr[["name"]]))
+    } else {
+      ncols <- length(diagonal_column_order(.boxed(spec, ro), ro))
+      png <- file.path(out_dir, sprintf("anchor_specificity_diagonal_%s.png", tr[["name"]]))
+      save_fig(pd, png, width = ncols * 0.6 + 3.5, height = length(ro) * 0.34 + 2.0); emit(png)
+    }
+    dist_all[[length(dist_all) + 1L]] <- distinctive_table(spec, tr[["name"]])
+  }
+  dist <- data.table::rbindlist(dist_all)
+  dist_path <- file.path(out_dir, "cluster_distinctive_categories.tsv")
+  data.table::fwrite(dist, dist_path, sep = "\t", na = "", quote = FALSE)
+  emit(dist_path)
+
+  message(sprintf("FINISHED ok | %d figure files + 1 table | out_dir: %s",
+                  length(written) - 1L, out_dir))
+  invisible(written)
 }

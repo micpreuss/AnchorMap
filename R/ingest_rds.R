@@ -1,4 +1,4 @@
-# ingest_rds.R — GenomicSEM ldsc() .rds ingestion for AnchorMap (Phase 2, Input C).
+# ingest_rds.R - GenomicSEM ldsc() .rds ingestion for AnchorMap (Phase 2, Input C).
 #
 # Reads a GenomicSEM ldsc() artifact (named list: $S genetic covariance, $V sampling covariance
 # of vech(S) in column-major lower-triangle order, $I intercepts), standardizes S -> genetic
@@ -7,11 +7,10 @@
 # trait redundancy matrix), and assembles the Phase-1 long-table + redundancy matrix so the rest
 # of the engine (gate -> redundancy -> score -> label) is route-agnostic.
 #
-# The parent runs ldsc(..., stand = FALSE) (run_cluster_gpca.R L401-411, to avoid an internal
-# crash on negative h2), so the .rds carries the *unstandardized* objects and AnchorMap must
-# standardize itself (mirroring run_cluster_gpca.R L414-422).
+# GenomicSEM ldsc() is typically run with stand = FALSE (to avoid an internal crash on negative
+# h2), so the .rds carries the *unstandardized* objects and AnchorMap standardizes them itself.
 #
-# Depends on resolve_path() (io.R) for rds_trait_meta resolution; sourced after io.R.
+# Depends on resolve_path() for rds_trait_meta resolution.
 
 # ---- vech indexing ---------------------------------------------------------
 # Position map for vech(S) in *column-major lower-triangle* order, matching GenomicSEM's $V:
@@ -33,7 +32,14 @@ vech_index <- function(k) {
 }
 
 # ---- reader ----------------------------------------------------------------
-# readRDS + shape asserts. $S square + named; $V square with nrow == k(k+1)/2; $I warn-and-carry.
+#' Read a GenomicSEM `ldsc()` `.rds` artifact
+#'
+#' `readRDS` plus shape assertions: `$S` square and named, `$V` square with
+#' `nrow == k(k+1)/2`, `$I` warned-about-but-carried.
+#'
+#' @param path Path to a GenomicSEM `ldsc()` `.rds` file.
+#' @return The validated list with `$S` and `$V` coerced to matrices.
+#' @export
 read_ldsc_rds <- function(path) {
   if (!file.exists(path)) stop(sprintf("read_ldsc_rds: file not found: %s", path))
   obj <- readRDS(path)
@@ -56,7 +62,7 @@ read_ldsc_rds <- function(path) {
   obj
 }
 
-# ---- standardization (mirror run_cluster_gpca.R L414-422) -------------------
+# ---- standardization --------------------------------------------------------
 # Clamp negative h2 diagonals to 0 *for the denominator only* so sqrt() is real; never overwrite S
 # itself (h2 extraction needs the raw diagonal). Off-diagonals are NOT clipped here (the Phase-1 gate
 # clips +/-0.999 for the Fisher-z transform; the matrix builder clips +/-1).
@@ -180,8 +186,18 @@ rds_to_trait_rg <- function(S_Stand, panel) {
 }
 
 # ---- driver-facing orchestrator --------------------------------------------
-# read -> partition -> standardize -> delta-method -> long-table + trait_rg block.
-# Returns list(df, trait_rg, n_factors, n_panel) for anchor_map.R.
+#' Assemble the engine inputs from a GenomicSEM `.rds`
+#'
+#' read -> partition (cluster factors vs panel traits) -> standardize -> delta-method `rg_se` ->
+#' the Input-A long-table plus the trait x trait redundancy block, so the rest of the engine is
+#' route-agnostic.
+#'
+#' @param path Path to a GenomicSEM `ldsc()` `.rds` file.
+#' @param cfg Config list (from `load_config()`).
+#' @param sroot Stage root for resolving relative paths.
+#' @param emit Logging function (default [message()]).
+#' @return A list with `df`, `trait_rg`, `n_factors`, `n_panel`.
+#' @export
 read_rds_route <- function(path, cfg, sroot, emit = message) {
   obj      <- read_ldsc_rds(path)
   S        <- obj[["S"]]; V <- obj[["V"]]

@@ -1,4 +1,4 @@
-# gate.R — LDSC reliability gate, per-trait statistics, ontology attach.
+# gate.R - LDSC reliability gate, per-trait statistics, ontology attach.
 # Ports anchor_categories.py:apply_universe_gate (L77-102) and attach_ontology (L105-124).
 
 # Per-row reliability gate + per-trait anchoring statistics. `z` here is the h2-reliability

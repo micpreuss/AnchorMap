@@ -1,0 +1,3 @@
+#!/bin/sh
+# PATH shim for the AnchorMap figures inside the image.
+exec Rscript -e 'suppressPackageStartupMessages(library(anchormap)); anchormap:::cli_plot_anchors(commandArgs(TRUE))' "$@"

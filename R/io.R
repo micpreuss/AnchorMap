@@ -1,14 +1,9 @@
-# io.R — config + standardized-TSV readers + schema asserts (AnchorMap Phase 1).
-# Ports the IO layer of cluster_anchoring/anchor_categories.py (load_config / resolve / load_long
-# + ontology reader). Reads the *identical* YAML configs, so existing configs work unchanged.
-
-suppressPackageStartupMessages({
-  library(data.table)
-  library(yaml)
-})
+# io.R - config + standardized-TSV readers + schema asserts.
+# The config + standardized-TSV / ontology readers. The YAML schema is stable, so configs are
+# portable across runs.
 
 # ---- config ----------------------------------------------------------------
-# Defaults mirror anchor_categories.py:load_config (the setdefault block).
+# Engine defaults; a YAML config overlays these.
 default_config <- function() {
   list(
     trait_group = "disease", require_ldsc_converged = TRUE, drop_negative_h2 = TRUE,
@@ -40,7 +35,22 @@ load_config <- function(path) {
   cfg
 }
 
-# stage_root = config dir, or its parent if the config lives in a `configs/` subdir (py L483-485).
+# Resolve a --config argument: a real file path is used as-is; otherwise a *bare name* is looked up
+# among the configs shipped with the installed package (so `--config example_anthro` / `synthetic_rds`
+# work out of the box). Returns the path unchanged when nothing matches, so the caller errors clearly.
+resolve_config_path <- function(path) {
+  if (is.null(path) || !nzchar(path)) return(path)
+  if (file.exists(path)) return(path)
+  for (cand in c(file.path("configs", path),
+                 file.path("configs", paste0(path, ".yaml")),
+                 file.path("configs", paste0(path, ".yml")))) {
+    p <- system.file(cand, package = "anchormap")
+    if (nzchar(p) && file.exists(p)) return(p)
+  }
+  path
+}
+
+# stage_root = config dir, or the directory above it when the config lives in a `configs/` subdir.
 stage_root_of <- function(config_path) {
   base <- dirname(normalizePath(config_path, mustWork = FALSE))
   if (basename(base) == "configs") dirname(base) else base
@@ -48,6 +58,14 @@ stage_root_of <- function(config_path) {
 
 resolve_path <- function(base_dir, path) {
   if (startsWith(path, "/")) path else file.path(base_dir, path)
+}
+
+# Resolve a CLI-supplied path relative to the current working directory (absolute paths pass
+# through). Used for --out-dir / --rg-long / --ontology overrides so they behave like shell paths,
+# independent of where the config lives.
+.abs_cwd <- function(path) {
+  if (is.null(path)) return(NULL)
+  if (startsWith(path, "/")) path else file.path(getwd(), path)
 }
 
 # ---- rg long-table (Input A) -----------------------------------------------

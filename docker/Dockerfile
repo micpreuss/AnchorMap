@@ -1,16 +1,16 @@
-# AnchorMap — pinned, reproducible image (THE tool). Phase 5.
+# AnchorMap — pinned, reproducible image (THE tool).
 #
-# The image IS AnchorMap: the validated Phase 1-4 R engine + figures, baked in, self-validating at
-# build time. Primary run interface:
+# The image IS AnchorMap: the `anchormap` R package (engine + figures) installed from source, plus
+# `anchor_map` / `plot_anchors` PATH shims, self-validating at build time. Primary run interface:
 #   docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
-#       Rscript /opt/anchormap/anchor_map.R --config <your.yaml> [--threads N]
+#       anchor_map --config <your.yaml> --out-dir results --threads N
 # Figures:
-#   ... Rscript /opt/anchormap/R/plot_anchors.R --config <plots.yaml>
+#   ... plot_anchors --config <plots.yaml> --out-dir results/figures
 #
 # Pinning: rocker/r-ver:4.6.0 (= the host R 4.6.0 the engine was validated on) + a single dated Posit
-# P3M CRAN snapshot, so R, future.apply, and ggplot2 all match the validated versions. GenomicSEM is
-# NOT installed — the engine reads ldsc() .rds artifacts with base readRDS() and never runs ldsc()
-# (see docker/README.md). Carries the parent container fixes: procps / USER root / ENTRYPOINT [].
+# P3M CRAN snapshot, so R and every dependency match the validated versions. GenomicSEM is NOT
+# installed — the engine reads ldsc() .rds artifacts with base readRDS() and never runs ldsc()
+# (see docker/README.md). Carries the container fixes: procps / USER root / ENTRYPOINT [].
 #
 # Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.0 -f docker/Dockerfile .
 # Build (local validation, native):   docker build -t anchormap:0.1.0 -f docker/Dockerfile .
@@ -31,46 +31,54 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ---- pin CRAN to a single dated P3M snapshot (binary install; codename detected from the base) ----
 # Override the date with --build-arg P3M_SNAPSHOT=YYYY-MM-DD. 2026-06-01 reproduces the host's
-# validated package set on R 4.6.0 — future.apply 1.20.x (the z-sweep needs >= 1.20: 1.11.x has a
-# future.globals=FALSE regression that drops the worker closure's `cfg`) and ggplot2 4.0.x (so the
-# figures match the validated ones). The verify + self-test steps below confirm the resolved versions.
+# validated package set on R 4.6.0 (future.apply 1.20.x — the z-sweep needs >= 1.20 — and ggplot2
+# 4.0.x so the figures match the validated ones). The self-tests below confirm the resolved set works.
 ARG P3M_SNAPSHOT=2026-06-01
 RUN CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")" && \
     printf '\noptions(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/%s/%s"))\noptions(HTTPUserAgent = sprintf("R/%%s R (%%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))\n' \
       "$CODENAME" "$P3M_SNAPSHOT" >> "$(R RHOME)/etc/Rprofile.site"
 
-# ---- R deps (engine + figures); NO GenomicSEM, NO argparse/optparse ----
-RUN R -e "install.packages(c('data.table','yaml','poolr','Matrix','future','future.apply', \
-                             'ggplot2','patchwork','scales','ggrepel','ragg'))"
+# ---- install the anchormap package from source (deps resolved from DESCRIPTION) ----
+# NO GenomicSEM, NO argparse/optparse. `remotes::install_deps(dependencies = TRUE)` pulls Imports +
+# Suggests (poolr cross-check, ragg figure backend) against the pinned snapshot; then R CMD INSTALL.
+WORKDIR /src
+COPY DESCRIPTION NAMESPACE LICENSE ./
+COPY R/ ./R/
+COPY inst/ ./inst/
+COPY man/ ./man/
+RUN R -e "install.packages('remotes'); remotes::install_deps('/src', dependencies = TRUE, upgrade = 'never')" \
+ && R CMD INSTALL --no-multiarch --with-keep.source /src
 
-# ---- verify the full runtime set loads ----
-RUN R -e "pk <- c('data.table','yaml','poolr','Matrix','future','future.apply','ggplot2', \
-                  'patchwork','scales','ggrepel','ragg'); \
+# ---- PATH shims so the interface is `anchor_map` / `plot_anchors` ----
+COPY docker/bin/anchor_map docker/bin/plot_anchors /usr/local/bin/
+RUN chmod +x /usr/local/bin/anchor_map /usr/local/bin/plot_anchors
+
+# ---- verify the runtime set loads ----
+RUN R -e "pk <- c('data.table','yaml','poolr','future','future.apply','ggplot2', \
+                  'patchwork','scales','ggrepel','ragg','anchormap'); \
           ok <- vapply(pk, requireNamespace, logical(1), quietly=TRUE); \
           print(data.frame(pkg=pk, ver=vapply(pk, function(p) as.character(packageVersion(p)), ''), ok=ok)); \
           if (!all(ok)) quit(status=1)"
 
-# ---- bake the tool in (pinned with the image tag) ----
-WORKDIR /opt/anchormap
-COPY R/ ./R/
-COPY anchor_map.R ./anchor_map.R
-COPY configs/ ./configs/
-COPY ontology/ ./ontology/
-COPY tests/fixtures/synthetic_ldsc_panel.rds tests/fixtures/synthetic_panel_ontology.tsv ./tests/fixtures/
-
-# ---- build-time self-test #1 (engine): self-contained synthetic .rds run must recover ----
+# ---- build-time self-test #1 (engine): the shipped synthetic .rds run must recover ----
 #      C5_sub0 -> anthro [sharp] + a FINISHED log. Fails the build on any engine/dep regression.
-RUN Rscript anchor_map.R --config configs/synthetic_rds.yaml --threads 2 \
- && grep -Eq 'C5_sub0.*anthro.*sharp' results/synthetic_rds/cluster_anchor_labels.tsv \
- && grep -q '^FINISHED ok' results/synthetic_rds/anchormap.log
+RUN mkdir -p /tmp/st \
+ && anchor_map --config synthetic_rds --out-dir /tmp/st/out --threads 2 \
+ && grep -Eq 'C5_sub0.*anthro.*sharp' /tmp/st/out/cluster_anchor_labels.tsv \
+ && grep -q '^FINISHED ok' /tmp/st/out/anchormap.log
 
 # ---- build-time self-test #2 (figures): the ggplot/ragg/cairo stack must render a PNG ----
-#      from those TSVs. Fails the build if the pinned ggplot2 can't draw the figures.
-RUN Rscript R/plot_anchors.R --config configs/synthetic_rds_plots.yaml \
- && ls results/synthetic_rds/figures/anchor_lollipops_synthetic.png \
- && rm -rf results/synthetic_rds
+#      from those TSVs (a plots config with absolute paths into self-test #1's output).
+RUN Rscript -e 'cfg <- yaml::read_yaml(system.file("configs/synthetic_rds_plots.yaml", package="anchormap")); \
+                cfg$out_dir <- "/tmp/st/out/figures"; \
+                cfg$tracks[[1]]$scores <- "/tmp/st/out/category_anchor_scores.tsv"; \
+                cfg$tracks[[1]]$labels <- "/tmp/st/out/cluster_anchor_labels.tsv"; \
+                yaml::write_yaml(cfg, "/tmp/st/plots.yaml")' \
+ && plot_anchors --config /tmp/st/plots.yaml \
+ && ls /tmp/st/out/figures/anchor_lollipops_synthetic.png \
+ && rm -rf /tmp/st
 
-# ---- project container fixes (see ../UKBB_CLUSTER_GWAS/docker/postgwas/README.md) ----
+# ---- container fixes (see docker/README.md) ----
 # Docker has NO inline-comment syntax: anything after the instruction is parsed as its argument, so
 # these comments MUST be on their own lines (an inline `# ...` silently mangles USER and ENTRYPOINT).
 # USER root  -> write to GCS-FUSE-mounted work dirs on Google Batch.

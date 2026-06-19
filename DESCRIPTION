@@ -1,0 +1,39 @@
+Package: anchormap
+Title: Competitive, Size- and Correlation-Aware Cluster Anchoring
+Version: 0.1.0
+Authors@R:
+    person("Michael", "Preuss", email = "preuss_micha@icloud.com", role = c("aut", "cre"))
+Description: Given latent cluster factors and their genetic correlations
+    (rg) to a trait panel, AnchorMap scores - competitively, size-aware,
+    and correlation-aware - which ontology domain each cluster anchors to,
+    how confidently, and whether the anchor is sharp or diffuse. It ingests
+    either a standardized rg long-table (plus an optional trait x trait rg
+    matrix) or a GenomicSEM ldsc() .rds artifact directly, runs a parallel
+    reliability-threshold sensitivity sweep, and renders publication-ready
+    figures. The engine is exposed both as a library (run_anchormap(),
+    run_plots(), run_sensitivity()) and as command-line entry points.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+URL: https://github.com/micpreuss/AnchorMap
+BugReports: https://github.com/micpreuss/AnchorMap/issues
+Depends:
+    R (>= 4.4)
+Imports:
+    data.table,
+    yaml,
+    future,
+    future.apply,
+    ggplot2,
+    patchwork,
+    scales,
+    ggrepel,
+    stats,
+    utils,
+    grDevices
+Suggests:
+    poolr,
+    ragg,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

@@ -12,10 +12,12 @@ PAR="/Users/mpreuss/Library/Mobile Documents/com~apple~CloudDocs/Desktop/project
 ORA="$PAR/scripts/cluster_anchoring/output"
 cd "$HERE"
 
+# The Carey/FinnGen configs are machine-specific (absolute input paths) and live in the gitignored
+# local/configs/. The engine is the installed `anchormap` package, driven via its CLI wrapper.
 status=0
 for run in carey_rint15_anthro carey_rint15; do
   echo "================ $run ================"
-  Rscript anchor_map.R --config "configs/$run.yaml" >/dev/null
+  Rscript inst/scripts/anchor_map.R --config "local/configs/$run.yaml" --out-dir "results/$run" >/dev/null
   Rscript validation/compare_oracle.R \
     --r-out  "results/$run/category_anchor_scores.tsv" \
     --oracle "$ORA/$run/category_anchor_scores.tsv" || status=1
@@ -23,6 +25,6 @@ for run in carey_rint15_anthro carey_rint15; do
 done
 
 echo "================ unit tests ================"
-Rscript tests/run_tests.R | tail -2
+Rscript -e 'testthat::test_local()' | tail -3
 
 exit $status

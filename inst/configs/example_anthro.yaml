@@ -1,0 +1,51 @@
+# AnchorMap — EXAMPLE config: single-category track via the rg long-table (Input A).
+# A template documenting every field. Replace the placeholder input paths with your files, then:
+#   anchor_map --config example_anthro.yaml --out-dir results/anthro --threads 4
+# For a runnable, self-contained smoke that needs no external data, use `synthetic_rds` instead.
+
+run_label: example_anthro
+
+# ---- inputs (edit these) ----
+# A: cluster x trait rg long-table. Required columns: cluster_label, trait_id, trait_category,
+#    trait_group, rg, rg_se, p, h2_trait, h2_trait_se, ldsc_converged, negative_h2, status.
+rg_long: path/to/cluster_trait_rg_long.tsv
+# D: ontology TSV. Here keyed on trait_id with a single class level (e.g. body-size traits).
+ontology: path/to/anthro_ontology.tsv
+out_dir: results/example_anthro
+
+# ---- trait universe / LDSC reliability gate ----
+trait_group: disease            # which trait_group rows to score
+require_ldsc_converged: true
+drop_negative_h2: true
+h2_z_threshold: 4.0             # gate: h2_trait / h2_trait_se > this
+
+# ---- ontology: join key + levels to score ----
+ontology_key: trait_id          # anthro/lab join on trait_id; disease joins on trait_category
+levels: [anthro_class]
+primary_level: anthro_class
+min_category_n: 3
+
+# ---- competitive enrichment ----
+rank_variable: abs_z
+permutation_K: 2000
+random_seed: 1
+vif_correlation: auto           # trait_rg (if coverage >= vif_coverage_min) -> cluster_profile -> VIF=1
+vif_coverage_min: 0.5
+# B: trait x trait LDSC --rg summary (p1, p2, rg, ..., CONVERGED). Used when vif_correlation
+#    resolves to trait_rg. Omit to force the cluster-profile proxy.
+# trait_rg_matrix: path/to/trait_trait_rg.summary.tsv
+trait_rg_require_converged: true
+vif_min_rho: 0.0
+
+# ---- over-representation (Fisher) ----
+hit_abs_rg: 0.2
+hit_bonferroni: true
+
+# ---- auto-label rule ----
+label_q_max: 0.05
+label_auc_min: 0.60
+
+# ---- anchor shape ----
+shape_margin_sharp: 0.10
+shape_margin_diffuse: 0.05
+shape_focus_diffuse: 3.0

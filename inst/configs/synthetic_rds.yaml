@@ -1,8 +1,8 @@
-# AnchorMap — synthetic GenomicSEM .rds route example (Phase 2 end-to-end smoke).
+# AnchorMap — synthetic GenomicSEM .rds route example (self-contained end-to-end smoke).
 # Drives the full engine straight from a GenomicSEM ldsc() artifact (no rg long-TSV, no separate
 # trait x trait summary): the .rds reader derives both the long-table and the redundancy matrix.
-# Build the fixtures first: Rscript tests/fixtures/make_synthetic_ldsc.R
-# Run: Rscript anchor_map.R --config configs/synthetic_rds.yaml
+# Run: anchor_map --config synthetic_rds --out-dir results/synthetic_rds
+# (fixtures are shipped with the package; regenerate via inst/fixtures/make_synthetic_ldsc.R)
 #
 # The .rds-derived trait x trait block has 100% coverage, so `vif_correlation: auto` selects
 # trait_rg (no fallback). Outputs the same two TSVs as the TSV route.
@@ -10,8 +10,8 @@
 run_label: synthetic_rds
 
 # ---- input: GenomicSEM .rds (Input C) instead of rg_long + trait_rg_matrix ----
-rds: tests/fixtures/synthetic_ldsc_panel.rds
-ontology: tests/fixtures/synthetic_panel_ontology.tsv
+rds: fixtures/synthetic_ldsc_panel.rds
+ontology: fixtures/synthetic_panel_ontology.tsv
 out_dir: results/synthetic_rds
 
 # ---- partition of the joint .rds: cluster factors vs panel traits ----

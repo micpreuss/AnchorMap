@@ -4,12 +4,20 @@ claude-science-scaffold/
 # macOS
 .DS_Store
 
+# Machine-specific / private configs (absolute input paths) — kept out of the public package
+local/
+
 # R
 .Rhistory
 .RData
 .Rapp.history
 .Rproj.user/
 *_cache/
+
+# R package build artifacts + dev run outputs under inst/
+inst/results/
+*.tar.gz
+*.Rcheck/
 
 # Editor / OS
 *~

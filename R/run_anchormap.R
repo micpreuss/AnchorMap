@@ -1,76 +1,70 @@
-#!/usr/bin/env Rscript
-# anchor_map.R — AnchorMap engine CLI (Phase 2).
-#
-# Faithful R port of cluster_anchoring/anchor_categories.py. Reads the identical YAML configs.
-#   Usage: Rscript anchor_map.R --config <config.yaml> [--threads N] [--rds <ldsc_output.rds>]
-#
-# Writes (flat, mirroring the Python reference, into the config's out_dir):
-#   category_anchor_scores.tsv   one row per (cluster, level, category)
-#   cluster_anchor_labels.tsv    one row per cluster (auto-label + anchor shape)
-#   anchormap.log                timestamped steps, ending in a FINISHED statement
-# Still single-z (the parallel z-sweep is Phase 3). Phase 2 adds: the GenomicSEM .rds input route
-# (--rds / cfg$rds, via R/ingest_rds.R) and the `vif_correlation: auto` redundancy auto-fallback.
-# Explicit `trait_rg`/`cluster_profile` modes keep Phase-1 behaviour byte-for-byte.
+# run_anchormap.R - the engine orchestrator (gate -> redundancy -> score -> label -> z-sweep -> TSVs).
 
-suppressPackageStartupMessages({ library(data.table); library(yaml) })
-
-# ---- locate + source the engine modules ------------------------------------
-get_script_dir <- function() {
-  a <- commandArgs(FALSE)
-  f <- grep("^--file=", a, value = TRUE)
-  if (length(f)) dirname(normalizePath(sub("^--file=", "", f[1]))) else getwd()
-}
-.SDIR <- get_script_dir()
-for (m in c("io.R","gate.R","redundancy.R","score.R","label.R","ingest_rds.R","sensitivity.R"))
-  source(file.path(.SDIR, "R", m))
-
-# ---- tiny arg parser (no argparse dependency) ------------------------------
-parse_args <- function(a) {
-  out <- list(config = NULL, threads = 1L, rds = NULL, z_vector = NULL)
-  i <- 1L
-  while (i <= length(a)) {
-    if (a[i] == "--config")  { out$config  <- a[i + 1L]; i <- i + 2L }
-    else if (a[i] == "--threads")  { out$threads  <- as.integer(a[i + 1L]); i <- i + 2L }
-    else if (a[i] == "--rds")      { out$rds      <- a[i + 1L]; i <- i + 2L }
-    else if (a[i] == "--z-vector") { out$z_vector <- as.numeric(strsplit(a[i + 1L], "[, ]+")[[1]]); i <- i + 2L }
-    else i <- i + 1L
-  }
-  if (is.null(out$config))
-    stop("usage: anchor_map.R --config <config.yaml> [--threads N] [--rds <file>] [--z-vector 3,4,5]")
-  out
-}
-
-# ---- output column contracts (must match the Python reference) -------------
+# ---- output column contracts -----------------------------------------------
 .SCORE_COLS <- c("cluster_label","level","category","eligible","n","n_eff","n_hit","rho_bar","vif",
                  "auc_abs","auc_signed","perm_p","vif_z","vif_p","pooled_rg","pooled_rg_ci_lo",
                  "pooled_rg_ci_hi","coherence","mean_abs_rg","mean_signed_rg","odds_ratio",
                  "fisher_p","q","rank")
 .LABEL_COLS <- c("cluster_label","auto_label","anchor_shape","anchor_margin","anchor_focus",
                  "n_sig_domains","top_auc","top_q","top_pooled_rg","top_coherence","profile")
-# Phase-3 sensitivity contracts: primary cols + z_threshold (+ label_stable for the labels table).
+# Sensitivity contracts: primary cols + z_threshold (+ label_stable for the labels table).
 .SENS_SCORE_COLS <- c(.SCORE_COLS, "z_threshold")
 .SENS_LABEL_COLS <- c(.LABEL_COLS, "z_threshold", "label_stable")
 
-run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL) {
+#' Run the AnchorMap engine
+#'
+#' Drives the full engine from a YAML config: ingest (rg long-table TSV **or** a GenomicSEM `.rds`),
+#' reliability gate, within-category redundancy, competitive scoring, auto-labelling, and a parallel
+#' reliability-threshold sensitivity sweep. Writes `category_anchor_scores.tsv`,
+#' `cluster_anchor_labels.tsv`, the two `sensitivity_z_*` TSVs, and `anchormap.log` into the output
+#' directory.
+#'
+#' @param config_path Path to a YAML config, or a bare shipped-config name (e.g. `"synthetic_rds"`).
+#' @param threads Worker/thread count (`setDTthreads` + the z-sweep workers).
+#' @param rds Optional GenomicSEM `.rds` input (overrides `cfg$rds`).
+#' @param z_vector Optional numeric vector overriding `cfg$z_vector` for the sweep.
+#' @param out_dir Optional output-directory override (else `cfg$out_dir`, else `results/<run_label>`).
+#' @param run_label Optional run label (logging; fallback output dir when `out_dir` is unset).
+#' @param rg_long,trait_rg,ontology Optional input-path overrides for the rg long-table, the
+#'   trait x trait rg matrix, and the ontology TSV (else taken from the config).
+#' @return Invisibly, a list with `ranked`, `labels`, `sens_scores`, `sens_labels`.
+#' @export
+run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL,
+                          out_dir = NULL, run_label = NULL,
+                          rg_long = NULL, trait_rg = NULL, ontology = NULL) {
   t0 <- Sys.time()
   log <- character(0)
   emit <- function(...) { line <- sprintf(...); message(line); log[[length(log) + 1L]] <<- line }
-  emit("[start] %s  AnchorMap engine (Phase 2)  config=%s",
-       format(t0, "%Y-%m-%d %H:%M:%S"), config_path)
+
+  config_path <- resolve_config_path(config_path)
+  emit("[start] %s  AnchorMap engine  config=%s", format(t0, "%Y-%m-%d %H:%M:%S"), config_path)
 
   data.table::setDTthreads(max(1L, threads))
   cfg   <- load_config(config_path)
   sroot <- stage_root_of(config_path)
   set.seed(as.integer(cfg[["random_seed"]]))
+
+  # ---- CLI input overrides (resolved relative to the working dir) ----
+  if (!is.null(rg_long))  cfg[["rg_long"]]         <- .abs_cwd(rg_long)
+  if (!is.null(trait_rg)) cfg[["trait_rg_matrix"]] <- .abs_cwd(trait_rg)
+  if (!is.null(ontology)) cfg[["ontology"]]        <- .abs_cwd(ontology)
+  if (!is.null(run_label)) cfg[["run_label"]]      <- run_label
+
   emit("[config] random_seed=%d permutation_K=%d vif_correlation=%s",
        as.integer(cfg[["random_seed"]]), as.integer(cfg[["permutation_K"]]), cfg[["vif_correlation"]])
 
-  ontology <- resolve_path(sroot, cfg[["ontology"]])
-  out_dir  <- resolve_path(sroot, cfg[["out_dir"]])
+  # ---- output directory: --out-dir (cwd-relative) > cfg$out_dir > results/<run_label> ----
+  rl <- run_label %||% cfg[["run_label"]]
+  out_dir <-
+    if (!is.null(out_dir))          .abs_cwd(out_dir)
+    else if (!is.null(cfg[["out_dir"]])) resolve_path(sroot, cfg[["out_dir"]])
+    else if (!is.null(rl))          resolve_path(sroot, file.path("results", rl))
+    else stop("No output directory: pass out_dir, or set out_dir/run_label in the config.")
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  ontology_path <- resolve_path(sroot, cfg[["ontology"]])
 
   # ---- input route: GenomicSEM .rds (Input C) OR rg long-TSV (Input A) ----
-  rds_path <- if (!is.null(rds)) rds else cfg[["rds"]]
+  rds_path <- if (!is.null(rds)) .abs_cwd(rds) else cfg[["rds"]]
   trait_rg_override <- NULL
   if (!is.null(rds_path)) {
     rds_path <- resolve_path(sroot, rds_path)
@@ -80,27 +74,27 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
     emit("[ingest] %d cluster factors x %d panel traits -> %d long rows",
          route[["n_factors"]], route[["n_panel"]], nrow(df))
   } else {
-    rg_long <- resolve_path(sroot, cfg[["rg_long"]])
-    emit("[load] %s", rg_long)
-    df <- read_long(rg_long)
+    rg_long_path <- resolve_path(sroot, cfg[["rg_long"]])
+    emit("[load] %s", rg_long_path)
+    df <- read_long(rg_long_path)
   }
 
   g   <- apply_universe_gate(df, cfg)
-  ont <- read_ontology(ontology, cfg[["ontology_key"]])
+  ont <- read_ontology(ontology_path, cfg[["ontology_key"]])
   g   <- attach_ontology(g, ont, cfg[["ontology_key"]], cfg[["levels"]])
   med <- as.integer(stats::median(table(g[["cluster_label"]])))
   emit("[gate] %s track: %d gated rows, %d clusters, %d traits/cluster (median); gate h2_z>%g",
        cfg[["trait_group"]], nrow(g), length(unique(g[["cluster_label"]])), med,
        as.numeric(cfg[["h2_z_threshold"]]))
 
-  # ---- Phase 3: parallel z-threshold sensitivity sweep ----
-  # Each z is a full independent re-run (gate -> redundancy -> score -> label). The primary z
-  # (h2_z_threshold) is always folded in; the primary TSVs are its slice, so primary == sweep[z==primary].
+  # ---- parallel z-threshold sensitivity sweep ----
+  # Each z is a full independent re-run; the primary z (h2_z_threshold) is always folded in, so the
+  # primary TSVs are its slice (primary == sweep[z==primary]).
   z_vec <- if (!is.null(z_vector)) as.numeric(z_vector) else as.numeric(cfg[["z_vector"]])
   zs    <- sort(unique(c(z_vec, as.numeric(cfg[["h2_z_threshold"]]))))
 
   # Build the trait x trait matrix ONCE over the loosest-z (superset) gated traits for the TSV route,
-  # so the big LDSC --rg summary isn't re-read per z (the .rds route already supplies the override).
+  # so the LDSC --rg summary isn't re-read per z (the .rds route already supplies the override).
   if (is.null(trait_rg_override) && cfg[["vif_correlation"]] %in% c("trait_rg","auto") &&
       !is.null(cfg[["trait_rg_matrix"]])) {
     loose_tids <- unique(apply_universe_gate(df, cfg, min(zs))[["trait_id"]])
@@ -120,7 +114,7 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
   if (is.null(prim[["ranked"]]) || !nrow(prim[["ranked"]]))
     stop("No category scores produced at the primary z - check gate thresholds / input.")
 
-  # ---- primary TSVs (byte-identical to the single-z run): exact .SCORE_COLS/.LABEL_COLS contract ----
+  # ---- primary TSVs (exact .SCORE_COLS/.LABEL_COLS contract) ----
   ranked <- prim[["ranked"]]; labels <- prim[["labels"]]
   ranked <- ranked[order(ranked[["level"]], ranked[["cluster_label"]], ranked[["rank"]]), .SCORE_COLS]
   ranked[["eligible"]] <- ifelse(ranked[["eligible"]], "True", "False")   # match pandas bool repr
@@ -159,9 +153,4 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
        basename(labels_path), basename(sens_scores_path), basename(sens_labels_path))
   writeLines(log, file.path(out_dir, "anchormap.log"))
   invisible(list(ranked = ranked, labels = labels, sens_scores = ss, sens_labels = sl))
-}
-
-if (sys.nframe() == 0L) {
-  a <- parse_args(commandArgs(TRUE))
-  run_anchormap(a$config, a$threads, a$rds, a$z_vector)
 }
