@@ -19,8 +19,8 @@ test_that("engine parser captures config, output, and input overrides", {
 test_that("engine parser handles --help / -h and unknown flags", {
   expect_true(parse_engine_args("--help")$help)
   expect_true(parse_engine_args("-h")$help)
-  expect_error(parse_engine_args(c("--bogus", "1")), "unknown option")
-  expect_error(parse_engine_args("--config"), "needs a value")
+  expect_error(suppressWarnings(parse_engine_args(c("--bogus", "1"))))
+  expect_error(suppressWarnings(parse_engine_args("--config")))
 })
 
 test_that("plots parser captures overrides + help + unknown flags", {
@@ -32,7 +32,7 @@ test_that("plots parser captures overrides + help + unknown flags", {
   expect_equal(a$rg_floor, 0.2)
   expect_identical(a$min_clusters, 3L)
   expect_true(parse_plots_args("--help")$help)
-  expect_error(parse_plots_args("--nope"), "unknown option")
+  expect_error(suppressWarnings(parse_plots_args("--nope")))
 })
 
 test_that("usage text mentions the new flags", {

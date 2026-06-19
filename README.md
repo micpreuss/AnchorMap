@@ -34,7 +34,7 @@ whether each cluster's label is stable.
 remotes::install_github("micpreuss/AnchorMap")
 ```
 
-Requires R ≥ 4.4. Dependencies (`data.table`, `yaml`, `future`, `future.apply`, `ggplot2`,
+Requires R ≥ 4.4. Dependencies (`data.table`, `yaml`, `optparse`, `future`, `future.apply`, `ggplot2`,
 `patchwork`, `scales`, `ggrepel`) install automatically; `poolr` and `ragg` are optional.
 
 **Docker image** (no R setup; pinned, reproducible):

@@ -39,7 +39,8 @@ RUN CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")" && \
       "$CODENAME" "$P3M_SNAPSHOT" >> "$(R RHOME)/etc/Rprofile.site"
 
 # ---- install the anchormap package from source (deps resolved from DESCRIPTION) ----
-# NO GenomicSEM, NO argparse/optparse. `remotes::install_deps(dependencies = TRUE)` pulls Imports +
+# NO GenomicSEM (the engine reads ldsc() .rds with base readRDS, never runs ldsc()).
+# `remotes::install_deps(dependencies = TRUE)` pulls Imports (incl. optparse for the CLI) +
 # Suggests (poolr cross-check, ragg figure backend) against the pinned snapshot; then R CMD INSTALL.
 WORKDIR /src
 COPY DESCRIPTION NAMESPACE LICENSE ./
@@ -54,7 +55,7 @@ COPY docker/bin/anchor_map docker/bin/plot_anchors /usr/local/bin/
 RUN chmod +x /usr/local/bin/anchor_map /usr/local/bin/plot_anchors
 
 # ---- verify the runtime set loads ----
-RUN R -e "pk <- c('data.table','yaml','poolr','future','future.apply','ggplot2', \
+RUN R -e "pk <- c('data.table','yaml','optparse','poolr','future','future.apply','ggplot2', \
                   'patchwork','scales','ggrepel','ragg','anchormap'); \
           ok <- vapply(pk, requireNamespace, logical(1), quietly=TRUE); \
           print(data.frame(pkg=pk, ver=vapply(pk, function(p) as.character(packageVersion(p)), ''), ok=ok)); \

@@ -6,10 +6,10 @@
 >
 > **Restructured into an installable R package (`anchormap`).** The engine is now `R/*.R` exporting
 > `run_anchormap()` / `run_plots()` / `run_sensitivity()`; CLI entry points are the `anchor_map` /
-> `plot_anchors` shims (or `inst/exec/*.R`), no longer a top-level `anchor_map.R`. Example configs +
+> `plot_anchors` shims (or `inst/scripts/*.R`), no longer a top-level `anchor_map.R`. Example configs +
 > ontologies + fixtures live under `inst/`; the machine-specific Carey/FinnGen configs moved to the
-> gitignored `local/configs/`. For current run commands see [README.md](README.md); the command
-> snippets below are retained as historical reference.
+> gitignored `local/configs/`. The run commands below have been updated to this package layout;
+> [README.md](README.md) is the public quick-start.
 
 Top-level index for the project. AnchorMap is a portable, reproducible **R + Docker** tool (with a
 Nextflow container-validation harness) that generalizes the `cluster_anchoring` method: given latent **cluster factors** and their
@@ -38,26 +38,27 @@ GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sw
 publication-ready figures, and ships as a pinned, self-validating Docker image** (with a Nextflow
 harness that proves the image runs under Nextflow):
 
-1. **Phase 1 — R engine port + fixture** ✅ — `R/` + [anchor_map.R](anchor_map.R), validated by
-   cross-language parity on the anthro + disease tracks.
+1. **Phase 1 — R engine port + fixture** ✅ — the `R/` modules + the `anchor_map` CLI
+   ([inst/scripts/anchor_map.R](inst/scripts/anchor_map.R)), validated by cross-language parity on the
+   anthro + disease tracks.
 2. **Phase 2 — input generalization** ✅ — GenomicSEM `ldsc()` `.rds` ingestion
    ([R/ingest_rds.R](R/ingest_rds.R): rg = S/√(diag·diag); `rg_se` via the exact delta-method on the
    3×3 `V`-submatrix, column-major vech indexing) via `--rds`/`cfg$rds`, plus the
    `vif_correlation: auto` redundancy auto-fallback (trait×trait → cluster-profile proxy → `VIF=1`).
-   Validated by [tests/test_phase2.R](tests/test_phase2.R) (delta-method numeric-diff, `.rds`↔TSV
+   Validated by the [tests/testthat/](tests/testthat/) suite (delta-method numeric-diff, `.rds`↔TSV
    round-trip, fallback branches, VIF-invariance); Phase-1 oracle parity preserved byte-for-byte.
 3. **Phase 3 — sensitivity + parallelism** ✅ — parallel h²-reliability **z-sweep**
    ([R/sensitivity.R](R/sensitivity.R)): `run_sensitivity` re-runs the whole engine at each z in
    `cfg$z_vector` (default `{3,4,5}`, the primary z always folded in) in parallel via `future.apply`,
    emitting `sensitivity_z_scores.tsv` + `sensitivity_z_labels.tsv` (with a per-cluster `label_stable`
    flag) alongside the unchanged primaries. `--z-vector` / `--threads` on the CLI. Validated by
-   [tests/test_phase3.R](tests/test_phase3.R) (primary-slice parity incl. `perm_p`, thread-invariance,
+   the [tests/testthat/](tests/testthat/) suite (primary-slice parity incl. `perm_p`, thread-invariance,
    `label_stable`, gate monotonicity). Determinism is engineered: each z-task re-seeds with
    `random_seed` **and pins the RNG kind to Mersenne-Twister** (`future.seed` flips it to L'Ecuyer),
    so the z = `h2_z_threshold` slice is byte-identical to the Phase-1/2 single-z primaries and the
    sweep is thread-count- and backend-invariant; `perm_p` stays serial to protect that parity.
-4. **Phase 4 — visualization** ✅ — publication-ready figures via [R/plot.R](R/plot.R) (ggplot2) + CLI
-   [R/plot_anchors.R](R/plot_anchors.R) + config [local/configs/carey_rint15_plots.yaml](local/configs/carey_rint15_plots.yaml):
+4. **Phase 4 — visualization** ✅ — publication-ready figures via [R/plot.R](R/plot.R) (ggplot2) + the
+   `plot_anchors` CLI ([inst/scripts/plot_anchors.R](inst/scripts/plot_anchors.R)) + a plots config:
    per-track lollipop small-multiples, a cluster×category dot-heatmap, an AUC-vs-coherence diagnostic,
    and the cross-cluster specificity heatmap + its diagonal reduction — PNG + PDF, config-driven and
    headless (ragg if present, else cairo), reading only the scored TSVs. The four channels stay distinct
@@ -108,7 +109,7 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendo
   - `figures/` *(Phase 4)* — per-track lollipop small-multiples, cluster×category dot-heatmap,
     AUC-vs-coherence diagnostic, and cross-cluster specificity heatmap + diagonal (PNG + PDF), plus
     `cluster_distinctive_categories.tsv` (`track, cluster_label, distinctive_category, spec_z, pooled_rg,
-    runner_up`). Written by `R/plot_anchors.R` from the scored TSVs, into `results/<run>/figures/`.
+    runner_up`). Written by the `plot_anchors` CLI from the scored TSVs, into `results/<run>/figures/`.
 
   See [CLAUDE.md](CLAUDE.md) for the full column contracts, units, sign, and rounding rules.
 
@@ -120,15 +121,16 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendo
 | Carey RINT-15 **disease** track | [local/configs/carey_rint15.yaml](local/configs/carey_rint15.yaml) | Comprehensive oracle: all clusters × {native, domain, icd_chapter}, primary level = `domain`. |
 | Input `rg` long-table (A) | `../UKBB_CLUSTER_GWAS/scripts/FinnGen_PheWAS_RG/results/carey_rint_tuned_15clusters_neff_max_empirical_covz/rg/cluster_trait_rg_long_with_p.tsv` | 42,795 rows. Clusters scored independently → safe to subset whole clusters for fast fixtures. |
 | Input trait×trait `rg` (B) | `../UKBB_CLUSTER_GWAS/data/finngen_rg/finngen_R12_FIN.ldsc.summary.tsv` | FinnGen R12 FIN LDSC `--rg` summary; 100% disease-endpoint coverage. |
-| Synthetic `.rds` route smoke | [configs/synthetic_rds.yaml](configs/synthetic_rds.yaml) | End-to-end Phase-2 `.rds` ingestion on a self-contained synthetic fixture ([tests/fixtures/](tests/fixtures/), built by `make_synthetic_ldsc.R`); `vif_correlation: auto` → trait_rg @ 100% coverage. |
+| Synthetic `.rds` route smoke | [inst/configs/synthetic_rds.yaml](inst/configs/synthetic_rds.yaml) | End-to-end Phase-2 `.rds` ingestion on a self-contained synthetic fixture ([inst/fixtures/](inst/fixtures/), built by `make_synthetic_ldsc.R`); `vif_correlation: auto` → trait_rg @ 100% coverage. |
 
 Configs reuse the parent `cluster_anchoring` configs verbatim — only paths are adapted (big inputs →
 absolute parent-repo paths; `ontology`/`out_dir` → AnchorMap-relative).
 
 ## Workflow order
 
-The engine is a single CLI ([anchor_map.R](anchor_map.R)) that sources the modules below; read them in
-execution order to catch up on the method (they port the reference 1:1, single z).
+The engine is the `anchor_map` CLI ([inst/scripts/anchor_map.R](inst/scripts/anchor_map.R)) over the
+`R/` modules below; read them in execution order to catch up on the method (they port the reference 1:1,
+single z).
 
 1. [R/io.R](R/io.R) — config (identical YAML to the parent) + standardized-TSV readers + schema asserts.
 2. [R/ingest_rds.R](R/ingest_rds.R) *(Phase 2)* — GenomicSEM `.rds` route: `vech_index`,
@@ -151,16 +153,16 @@ execution order to catch up on the method (they port the reference 1:1, single z
    `leaf_order` (cluster row + category column ordering), `specificity` + `distinctive_table` (the
    cross-cluster z), and `fig_lollipops` / `fig_dotheatmap` / `fig_scatter` / `fig_specificity` /
    `fig_diagonal` with diverging RdBu (rg) / PuOr (specificity) scales and a `save_fig` (ragg→cairo,
-   PNG+PDF). Driven by the separate CLI [R/plot_anchors.R](R/plot_anchors.R) — it does **not** re-run the
-   engine.
+   PNG+PDF). Driven by the separate `plot_anchors` CLI ([inst/scripts/plot_anchors.R](inst/scripts/plot_anchors.R))
+   — it does **not** re-run the engine.
 
 Drivers:
 
-- **Engine** — [anchor_map.R](anchor_map.R):
-  `Rscript anchor_map.R --config <yaml> [--threads N] [--rds <file>] [--z-vector 3,4,5]` → the two
-  primary TSVs + the two sensitivity TSVs + `anchormap.log`.
-- **Figures** — [R/plot_anchors.R](R/plot_anchors.R):
-  `Rscript R/plot_anchors.R --config local/configs/carey_rint15_plots.yaml [--q-sig N] [--rg-floor N] [--min-clusters N]`
+- **Engine** — the `anchor_map` CLI ([inst/scripts/anchor_map.R](inst/scripts/anchor_map.R)):
+  `anchor_map --config <yaml|name> [--out-dir DIR] [--threads N] [--rds <file>] [--z-vector 3,4,5]` → the
+  two primary TSVs + the two sensitivity TSVs + `anchormap.log`.
+- **Figures** — the `plot_anchors` CLI ([inst/scripts/plot_anchors.R](inst/scripts/plot_anchors.R)):
+  `plot_anchors --config <plots.yaml|name> [--out-dir DIR] [--q-sig N] [--rg-floor N] [--min-clusters N]`
   → `results/<run>/figures/` (PNG+PDF + the distinctive TSV).
 
 ## Data flow at a glance
@@ -185,27 +187,27 @@ GenomicSEM .rds ─► ingest_rds.R   per-trait       source: trait_rg→    IVW
 R ≥ 4.4 with `data.table`, `yaml`, `future`, **`future.apply` ≥ 1.20** (required; the last two drive the
 Phase-3 z-sweep — note 1.11.x has a `future.globals` regression that breaks the sweep) and `poolr`
 (optional, `n_eff` cross-check). The Phase-4 figures additionally need `ggplot2`, `patchwork`, `scales`,
-`ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is absent). No
-`argparse`/`testthat` needed — the CLI and tests use base R. **Or skip host R entirely and use the pinned
+`ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is absent). The CLI uses
+`optparse`; `testthat` is needed only to run the test suite. **Or skip host R entirely and use the pinned
 image** (`docker run anchormap:0.1.0 …`), which carries the exact validated versions (R 4.6.0,
 `future.apply 1.20.2`, `ggplot2 4.0.3`).
 
 ## Run
 
 ```bash
-Rscript anchor_map.R --config local/configs/carey_rint15_anthro.yaml --threads 4   # TSV route -> results/carey_rint15_anthro/
-Rscript anchor_map.R --config local/configs/carey_rint15.yaml --rds <ldsc_output.rds>   # .rds route (override input)
-Rscript anchor_map.R --config local/configs/carey_rint15.yaml --z-vector 2,3,4,5,6     # override the z-sweep
+R CMD INSTALL .                                                 # install the anchormap package (host)
 
-Rscript R/plot_anchors.R --config local/configs/carey_rint15_plots.yaml  # Phase-4 figures -> results/carey_rint15/figures/
+Rscript inst/scripts/anchor_map.R  --config local/configs/carey_rint15_anthro.yaml --out-dir results/carey_rint15_anthro --threads 4  # TSV route
+Rscript inst/scripts/anchor_map.R  --config local/configs/carey_rint15.yaml --rds <ldsc_output.rds> --out-dir results/carey_rint15      # .rds route (override input)
+Rscript inst/scripts/anchor_map.R  --config local/configs/carey_rint15.yaml --z-vector 2,3,4,5,6 --out-dir results/carey_rint15         # override the z-sweep
+Rscript inst/scripts/plot_anchors.R --config local/configs/carey_rint15_plots.yaml --out-dir results/carey_rint15/figures               # Phase-4 figures
 
-Rscript tests/fixtures/make_synthetic_ldsc.R                     # build the synthetic .rds fixtures
-Rscript anchor_map.R --config configs/synthetic_rds.yaml         # .rds-route end-to-end smoke
-Rscript tests/run_tests.R                                        # Phase-1 analytic unit tests (base-R asserts)
-Rscript tests/test_phase2.R                                      # Phase-2: delta-method, round-trip, fallback, VIF-invariance
-Rscript tests/test_phase3.R                                      # Phase-3: primary-slice parity, thread-invariance, label_stable
-bash    validation/run_oracle.sh                                 # full cross-language parity vs Python
+Rscript inst/scripts/anchor_map.R  --config synthetic_rds --out-dir results/synthetic_rds   # .rds-route end-to-end smoke (shipped config + fixture)
+Rscript -e 'testthat::test_local()'                            # full testthat suite (analytic + parity + sensitivity + CLI)
+bash    validation/run_oracle.sh                               # full cross-language parity vs Python
 ```
+
+(After install, the `anchor_map` / `plot_anchors` PATH shims work too; the pinned image puts them on `PATH`. `--config` accepts a YAML path **or** a bare shipped-config name resolved from `inst/configs/`.)
 
 ### Phase 5 — pinned image + Nextflow harness
 
@@ -215,7 +217,7 @@ docker build -t anchormap:0.1.0 -f docker/Dockerfile .          # release: add -
 
 # Run AnchorMap reproducibly via the image (primary interface; mount cwd as /work):
 docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
-  Rscript /opt/anchormap/anchor_map.R --config local/configs/carey_rint15_anthro.yaml --threads 4
+  anchor_map --config local/configs/carey_rint15_anthro.yaml --out-dir results/carey_rint15_anthro --threads 4
 
 # Validate the image runs flawlessly UNDER Nextflow (not how you run AnchorMap):
 nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml   # local CI gate
@@ -248,8 +250,9 @@ nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.ya
 
 Short pointers only — the authoritative text lives in [CLAUDE.md](CLAUDE.md).
 
-- **Config-over-CLI:** all params live in a `--config <yaml>`; reuse parent configs unchanged (adjust
-  paths only). CLI flags are limited to `--threads`, `--z-vector` (Phase 3) and `--rds` (Phase 2).
+- **Config-over-CLI:** all params live in a `--config <yaml|name>`; reuse parent configs unchanged (adjust
+  paths only). CLI flags cover output (`--out-dir`/`--run-label`), input overrides (`--rds`, `--rg-long`,
+  `--trait-rg`, `--ontology`), and engine controls (`--threads`, `--z-vector`); parsed via `optparse`.
 - **Schemas:** the rg long-table, LDSC `--rg`, GenomicSEM `.rds`, ontology, and output column
   contracts are documented in CLAUDE.md → *Data schemas*.
 - **Porting gotchas:** scipy `fisher_exact` returns the *sample* OR `(a·d)/(b·c)` (not R's

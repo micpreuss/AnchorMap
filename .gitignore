@@ -14,8 +14,9 @@ local/
 .Rproj.user/
 *_cache/
 
-# R package build artifacts + dev run outputs under inst/
+# R package build artifacts + generated run outputs (engine TSVs/logs/figures — regenerable)
 inst/results/
+results/
 *.tar.gz
 *.Rcheck/
 
@@ -30,4 +31,3 @@ work/
 trace-*.txt
 report-*.html
 timeline-*.html
-results/anchormap_smoke/
