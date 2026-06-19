@@ -25,6 +25,45 @@ For each `(cluster, ontology level, category)` it computes:
 A parallel **sensitivity sweep** re-runs the whole pipeline across reliability thresholds and flags
 whether each cluster's label is stable.
 
+### A minimal example
+
+Suppose one cluster `C0` has these genetic correlations (`rg`) to six diseases. Each disease
+(`trait_id`) carries a category (`trait_category`) that rolls up into a `domain`:
+
+```text
+trait_id     rg      trait_category   →  domain
+T2D          0.45    E4_DM2           →  Endocrine-metabolic
+OBESITY      0.40    E4_OBESITY       →  Endocrine-metabolic
+HYPERLIPID   0.38    E4_HYPERCHOL     →  Endocrine-metabolic
+HTN          0.08    I9_HYPTENS       →  Circulatory
+CHD         -0.05    I9_CHD           →  Circulatory
+AFIB         0.06    I9_AF            →  Circulatory
+```
+
+AnchorMap groups `C0`'s diseases by `domain` and asks **which domain its correlations concentrate in**
+(ranking in-domain vs out-of-domain traits — the AUC):
+
+```text
+domain                n   mean|rg|   AUC
+Endocrine-metabolic   3     0.41     1.00   ← C0's rg ranks top here  →  anchor
+Circulatory           3     0.06     0.00
+```
+
+`C0`'s correlations sit almost entirely on the endocrine diseases (its 3 endocrine `rg` values
+out-rank every circulatory one, so AUC = 1.00), and the margin over the runner-up is large, so the
+auto-label is:
+
+```text
+C0  →  Endocrine-metabolic  [sharp]
+```
+
+That is the anchor: the domain a cluster is most enriched for, with an **anchor shape**
+(`sharp` here — a clean, dominant winner) and an FDR `q`-value for confidence. Note the roles —
+`trait_id` identifies each disease (and drives the redundancy correction); `trait_category → domain`
+is what the cluster is mapped onto. The shipped example pair
+([Running on your own data](#running-on-your-own-data)) is this same logic over 3 clusters × 9 diseases —
+run it to reproduce `C0 → Endocrine-metabolic [sharp]`.
+
 ## Install
 
 **R package** (engine + figures):
@@ -37,48 +76,110 @@ remotes::install_github("micpreuss/AnchorMap")
 Requires R ≥ 4.4. Dependencies (`data.table`, `yaml`, `optparse`, `future`, `future.apply`, `ggplot2`,
 `patchwork`, `scales`, `ggrepel`) install automatically; `poolr` and `ragg` are optional.
 
-**Docker image** (no R setup; pinned, reproducible):
+**Docker image**
+The only two things you install are [git](https://git-scm.com/downloads) and
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) — **R and every package live inside
+the image**, so there is nothing else to manage. Download the source and build the image once:
 
 ```bash
-docker build -t anchormap:0.1.0 -f docker/Dockerfile .
+git clone https://github.com/micpreuss/AnchorMap.git    # download the source
+cd AnchorMap                                             # enter the project folder
+docker build -t anchormap:0.1.0 -f docker/Dockerfile .  # build the image (a few minutes)
 ```
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  anchor_map --config synthetic_rds --out-dir results/demo --threads 2
+#> ... C5_sub0 -> anthro [sharp] ...      (results written to ./results/demo)
+```
+
+Then point it at your own inputs — see [Running on your own data](#running-on-your-own-data) below.
+(The repository must be reachable from your machine.)
 
 ## Quick start
 
-A self-contained synthetic example ships with the package — no external data needed:
+A self-contained synthetic example ships with the tool.
+
+### R
 
 ```r
 library(anchormap)
+
+# score each cluster's anchoring (also runs the reliability z-sweep)
 run_anchormap("synthetic_rds", out_dir = "results/demo", threads = 2)
-#> ... C5_sub0 -> anthro [sharp] ...
+
+# render the figures
 run_plots("synthetic_rds_plots", out_dir = "results/demo/figures")
 ```
 
-Same thing on the command line:
+### Docker
 
 ```bash
-anchor_map  --config synthetic_rds --out-dir results/demo --threads 2
-plot_anchors --config synthetic_rds_plots --out-dir results/demo/figures
-```
+# score each cluster's anchoring (also runs the reliability z-sweep)
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 
-(If you installed only the package, the shims are `Rscript -e 'anchormap:::cli_anchor_map()' ...`; the
-Docker image puts `anchor_map` / `plot_anchors` on the `PATH`.)
+# render the figures
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  plot_anchors --config synthetic_rds_plots --out-dir results/demo/figures
+```
 
 ## Running on your own data
 
-Copy a shipped template and edit the paths, or pass everything on the CLI:
+AnchorMap is config-driven. Two fully-commented templates ship with the package —
+[`example_anthro.yaml`](inst/configs/example_anthro.yaml) (single-category track) and
+[`example_disease.yaml`](inst/configs/example_disease.yaml) (multi-level disease track). Copy one,
+point its `rg_long` / `ontology` / `out_dir` at your files, and run; see
+[Configuration](#configuration) for what each field means.
+
+To see a complete run first, a coherent example pair ships with the package — no editing, no external
+data (3 clusters × 9 disease traits; the `trait_category → domain` join in action). Run it from your
+cloned `AnchorMap` folder (that's where the two `inst/fixtures/...` files live); `--config
+example_disease` is a bare name that the tool resolves from its built-in configs:
 
 ```bash
-# config-driven (recommended): copy example_anthro.yaml / example_disease.yaml and edit
+anchor_map --config example_disease \
+  --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
+  --out-dir results/example_disease --threads 4
+#> C0 -> Endocrine-metabolic [sharp] | C1 -> Circulatory [sharp] | C2 -> ambiguous
+```
+
+Then for your own data:
+
+```bash
+# config-driven (recommended): copy a template, edit the paths
 anchor_map --config myrun.yaml --out-dir results/run1 --threads 4
 
-# or point at files directly, no YAML editing:
+# or keep the template as-is and override the inputs on the CLI (no YAML editing):
 anchor_map --config example_anthro.yaml \
   --rg-long data/cluster_trait_rg.tsv --ontology data/ontology.tsv \
   --out-dir results/run1 --threads 4
 ```
 
-### Via Docker (mount your data and an output dir)
+To grab a copy of a template (the shipped configs install alongside the package):
+
+```r
+file.copy(system.file("configs/example_disease.yaml", package = "anchormap"), "myrun.yaml")
+```
+
+### Via Docker
+
+The shipped configs live **inside the image**, so you refer to them by bare name (`synthetic_rds`,
+`example_disease`) — there's nothing to locate or mount. The example *pair's* data TSVs, though, are
+files in your cloned `AnchorMap` folder, so run that example from there: `-v "$PWD:/work"` mounts the
+current folder (the repo) into the container as `/work`, and `-w /work` makes it the working dir, so
+`inst/fixtures/...` resolves:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  anchor_map --config example_disease \
+    --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
+    --out-dir results/example_disease
+```
+
+**For your own data**, the container still can't see your files unless you *mount* their folder. The
+`-v host:container` flag maps a folder on your computer to one inside the container — here `./data`
+(your inputs, read-only via `:ro`) becomes `/data`, and `./out` (where results land) becomes `/out`:
 
 ```bash
 docker run --rm \
@@ -86,6 +187,11 @@ docker run --rm \
   anchormap:0.1.0 \
   anchor_map --config /data/myrun.yaml --out-dir /out --threads 4
 ```
+
+The paths in the command (`/data/...`, `/out`) refer to the folders *inside* the container — i.e. the
+right-hand side of each `-v` mapping. A template to start from is
+[`inst/configs/example_disease.yaml`](inst/configs/example_disease.yaml) in the cloned repo (or copy
+one out with the `file.copy(...)` snippet above); put your edited copy in `./data` and mount it.
 
 ### Command-line help
 
@@ -104,18 +210,84 @@ Key flags: `--config` (a YAML path **or** a bare shipped-config name); input ove
 
 Two interchangeable routes converge on the same engine:
 
-- **Route A — two TSVs:**
+- **TSV route — two files:**
   - a **cluster × trait `rg` long-table** with columns `cluster_label, trait_id, trait_category,
     trait_group, rg, rg_se, p, h2_trait, h2_trait_se, ldsc_converged, negative_h2, status`
-    (one row per cluster × trait);
+    (one row per cluster × trait) — see [`example_rg_long.tsv`](inst/fixtures/example_rg_long.tsv)
+    for a small, ready-to-read example (it pairs with
+    [`example_ontology.tsv`](inst/fixtures/example_ontology.tsv); see below to run it);
   - optionally a **trait × trait `rg` matrix** (an LDSC `--rg` summary: `p1, p2, rg, …, CONVERGED`)
     as the within-category redundancy source.
-- **Route C — a GenomicSEM `ldsc()` `.rds`** (`--rds`): AnchorMap standardizes `$S` → `rg`, derives
+- **`.rds` route — a GenomicSEM `ldsc()` object** (`--rds`): AnchorMap standardizes `$S` → `rg`, derives
   `rg_se` by the delta method on `$V`, splits cluster factors from panel traits, and derives both the
   long-table and the trait × trait block — so the rest of the engine is route-agnostic.
 
-Both routes also need an **ontology TSV** mapping traits/categories to domains, with an
-`anchor_eligible` flag (ineligible categories can be scored but never become an auto-label).
+Both routes also need an **ontology TSV** mapping each trait to its grouping(s), with an
+`anchor_eligible` flag (ineligible groups can be scored but never become an auto-label).
+
+**What gets mapped to what.** For the disease track the chain is, **per cluster**:
+
+```text
+long-table trait_category  ──join──►  ontology row  ──►  domain  (──►  icd_chapter)
+        (e.g. E4_DM2)                                  (Endocrine-metabolic)
+```
+
+For each cluster the engine ranks its `rg` across all traits, groups those traits by `domain` (looked
+up from each trait's `trait_category`), and asks which domain is enriched — **that** is the cluster's
+anchor. The auto-label is the winning `domain` (or whichever level is set as `primary_level`). So the
+column that *drives the anchor* is `trait_category` → `domain`; `trait_id` is the trait's unique
+identifier (used to compute the redundancy/VIF correction and to key one row per `(cluster, trait)`),
+**not** part of the mapping itself.
+
+The join key is `ontology_key` — `trait_category` for the disease track (above), or `trait_id` for
+the anthro/lab track (where traits map directly to a single class level, e.g. `anthro_class`). On the
+disease track the levels form a **fine → coarse hierarchy** — `trait_category` (finest, = the join
+key) rolls up into `domain`, which rolls up into `icd_chapter` — so `levels: [native, domain,
+icd_chapter]` anchors at three zoom levels of the same ontology (`native` aliases the join key).
+
+## Configuration
+
+A run is fully described by one YAML file. The shipped templates
+([`example_anthro.yaml`](inst/configs/example_anthro.yaml),
+[`example_disease.yaml`](inst/configs/example_disease.yaml)) carry an inline comment on every field;
+the table below is the reference. Any field can be overridden on the CLI (e.g. `--out-dir`,
+`--threads`, `--z-vector`, `--rds`, `--rg-long`, `--trait-rg`, `--ontology`).
+
+| Group | Field | Meaning |
+| --- | --- | --- |
+| **Inputs** | `run_label` | name for this run (used in log lines / output labelling) |
+| | `rg_long` | path to the cluster × trait `rg` long-table (TSV route) |
+| | `trait_rg_matrix` | *(optional)* path to the trait × trait LDSC `--rg` summary (redundancy source) |
+| | `rds` | *(optional)* path to a GenomicSEM `ldsc()` `.rds` (`.rds` route; replaces `rg_long`) |
+| | `ontology` | path to the ontology TSV |
+| | `out_dir` | where TSVs, the log, and `figures/` are written |
+| **Reliability gate** | `trait_group` | which `trait_group` rows to score (e.g. `disease`) |
+| | `require_ldsc_converged` | drop rows where LDSC did not converge |
+| | `drop_negative_h2` | drop rows with negative trait h² |
+| | `h2_z_threshold` | keep a trait only if `h2_trait / h2_trait_se >` this (default `4.0`) |
+| **Ontology** | `ontology_key` | join key — `trait_id` (anthro/lab) or `trait_category` (disease) |
+| | `levels` | ontology levels to score (e.g. `[native, domain, icd_chapter]`) |
+| | `primary_level` | the level used for the per-cluster auto-label |
+| | `min_category_n` | minimum traits in a category for it to be scored |
+| **Enrichment** | `rank_variable` | statistic ranked for the Mann–Whitney AUC (`abs_z`) |
+| | `permutation_K` | label-permutation draws for `perm_p` (default `2000`) |
+| | `random_seed` | RNG seed (determinism) |
+| | `vif_correlation` | redundancy source: `auto` → `trait_rg` → `cluster_profile` → `VIF=1` |
+| | `vif_coverage_min` | min trait×trait coverage before `auto` falls back from `trait_rg` (`0.5`) |
+| | `trait_rg_require_converged` | use only converged trait×trait pairs |
+| | `vif_min_rho` | floor applied to correlations entering the VIF |
+| **Over-representation** | `hit_abs_rg` | `\|rg\|` threshold for a trait to count as a Fisher "hit" |
+| | `hit_bonferroni` | additionally require Bonferroni-significant `p` for a hit |
+| **Auto-label** | `label_q_max` | max FDR `q` for a category to be label-eligible (`0.05`) |
+| | `label_auc_min` | min AUC for a category to be label-eligible (`0.60`) |
+| **Anchor shape** | `shape_margin_sharp` | AUC margin (top vs next) above which the anchor is *sharp* |
+| | `shape_margin_diffuse` | margin below which it is *diffuse* |
+| | `shape_focus_diffuse` | spread of significant domains above which it is *diffuse* |
+
+The **figures** config is separate ([`example_plots.yaml`](inst/configs/example_plots.yaml)): it lists
+one or more `tracks` (each a `name`, `level`, and the `scores`/`labels` TSVs the engine wrote) plus
+plot knobs (`top_k`, `rg_cap`) and the cross-cluster specificity gate (`q_sig`, `spec_rg_floor`,
+`spec_min_clusters`, overridable via `--q-sig` / `--rg-floor` / `--min-clusters`).
 
 ## Outputs
 

@@ -1,26 +1,39 @@
 # AnchorMap — EXAMPLE config: comprehensive disease track via the rg long-table (Input A).
-# Scores every cluster across three ontology levels. Replace placeholder paths, then:
+# Scores every cluster across three ontology levels. Two kinds of things to adapt to YOUR data:
+#   1) the input PATHS in the first block (rg_long / ontology / out_dir);
+#   2) the SETTINGS that must match your column names/values — trait_group, ontology_key, levels,
+#      primary_level (flagged "match to your data" below).
+# A coherent, runnable example PAIR ships with the package and matches this disease track exactly:
+#   inst/fixtures/example_rg_long.tsv   (3 clusters x 9 disease traits; the 12-column long-table)
+#   inst/fixtures/example_ontology.tsv  (trait_category -> domain -> icd_chapter, the join target)
+# Run it as-is (no editing) to see the trait_category -> domain anchoring:
+#   anchor_map --config example_disease \
+#     --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
+#     --out-dir results/example_disease --threads 4
+# (-> C0 Endocrine-metabolic [sharp], C1 Circulatory [sharp], C2 ambiguous). For your own run, edit:
 #   anchor_map --config example_disease.yaml --out-dir results/disease --threads 4
 
 run_label: example_disease
 
-# ---- inputs (edit these) ----
+# ---- inputs: paths to YOUR files ----
+# A: cluster x trait rg long-table. trait_category must match the ontology's join key (see the
+#    runnable example pair above: inst/fixtures/example_rg_long.tsv + example_ontology.tsv).
 rg_long: path/to/cluster_trait_rg_long.tsv
 # Disease ontology keyed on trait_category, with domain + icd_chapter levels and an
 # anchor_eligible flag (FALSE categories can be scored but never become an auto_label).
 ontology: path/to/disease_ontology.tsv
 out_dir: results/example_disease
 
-# ---- trait universe / LDSC reliability gate ----
-trait_group: disease
+# ---- trait universe / LDSC reliability gate (match to your data) ----
+trait_group: disease            # a value present in your long-table's trait_group column
 require_ldsc_converged: true
 drop_negative_h2: true
 h2_z_threshold: 4.0
 
-# ---- ontology levels to score ----
-ontology_key: trait_category
-levels: [native, domain, icd_chapter]
-primary_level: domain
+# ---- ontology: join key + levels to score (match to YOUR ontology's columns) ----
+ontology_key: trait_category    # the column shared by long-table & ontology (trait_id or trait_category)
+levels: [native, domain, icd_chapter]   # ontology column(s) to score — must exist in your ontology TSV
+primary_level: domain                    # which of `levels` drives the auto-label
 min_category_n: 3
 
 # ---- competitive enrichment ----

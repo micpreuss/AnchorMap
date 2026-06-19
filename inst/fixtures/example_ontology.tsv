@@ -1,0 +1,10 @@
+trait_category	domain	icd_chapter	kind	anchor_eligible
+E4_DM2	Endocrine-metabolic	IV	icd_chapter	TRUE
+E4_OBESITY	Endocrine-metabolic	IV	icd_chapter	TRUE
+E4_HYPERCHOL	Endocrine-metabolic	IV	icd_chapter	TRUE
+I9_HYPTENS	Circulatory	IX	icd_chapter	TRUE
+I9_CHD	Circulatory	IX	icd_chapter	TRUE
+I9_AF	Circulatory	IX	icd_chapter	TRUE
+F5_DEPRESSIO	Mental-behavioral	V	icd_chapter	TRUE
+F5_ANXIETY	Mental-behavioral	V	icd_chapter	TRUE
+F5_BIPO	Mental-behavioral	V	icd_chapter	TRUE

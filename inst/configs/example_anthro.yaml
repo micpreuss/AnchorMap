@@ -1,28 +1,34 @@
 # AnchorMap — EXAMPLE config: single-category track via the rg long-table (Input A).
-# A template documenting every field. Replace the placeholder input paths with your files, then:
+# A template documenting every field. Two kinds of things to adapt to YOUR data:
+#   1) the input PATHS in the first block (rg_long / ontology / out_dir);
+#   2) the SETTINGS that must match your column names/values — trait_group, ontology_key, levels,
+#      primary_level (flagged "match to your data" below).
+# inst/fixtures/example_rg_long.tsv shows the 12-column long-table schema (that file is the disease
+# track — keyed on trait_category; this anthro template instead joins on trait_id). Then run:
 #   anchor_map --config example_anthro.yaml --out-dir results/anthro --threads 4
 # For a runnable, self-contained smoke that needs no external data, use `synthetic_rds` instead.
 
 run_label: example_anthro
 
-# ---- inputs (edit these) ----
+# ---- inputs: paths to YOUR files ----
 # A: cluster x trait rg long-table. Required columns: cluster_label, trait_id, trait_category,
 #    trait_group, rg, rg_se, p, h2_trait, h2_trait_se, ldsc_converged, negative_h2, status.
+#    (see inst/fixtures/example_rg_long.tsv for a concrete example of this schema)
 rg_long: path/to/cluster_trait_rg_long.tsv
 # D: ontology TSV. Here keyed on trait_id with a single class level (e.g. body-size traits).
 ontology: path/to/anthro_ontology.tsv
 out_dir: results/example_anthro
 
-# ---- trait universe / LDSC reliability gate ----
-trait_group: disease            # which trait_group rows to score
+# ---- trait universe / LDSC reliability gate (match to your data) ----
+trait_group: disease            # a value present in your long-table's trait_group column
 require_ldsc_converged: true
 drop_negative_h2: true
 h2_z_threshold: 4.0             # gate: h2_trait / h2_trait_se > this
 
-# ---- ontology: join key + levels to score ----
-ontology_key: trait_id          # anthro/lab join on trait_id; disease joins on trait_category
-levels: [anthro_class]
-primary_level: anthro_class
+# ---- ontology: join key + levels to score (match to YOUR ontology's columns) ----
+ontology_key: trait_id          # the column shared by long-table & ontology (trait_id or trait_category)
+levels: [anthro_class]          # ontology column(s) to score — must be column names in your ontology TSV
+primary_level: anthro_class     # which of `levels` drives the auto-label
 min_category_n: 3
 
 # ---- competitive enrichment ----
