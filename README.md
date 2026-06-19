@@ -76,25 +76,24 @@ remotes::install_github("micpreuss/AnchorMap")
 Requires R ≥ 4.4. Dependencies (`data.table`, `yaml`, `optparse`, `future`, `future.apply`, `ggplot2`,
 `patchwork`, `scales`, `ggrepel`) install automatically; `poolr` and `ragg` are optional.
 
-**Docker image**
-The only two things you install are [git](https://git-scm.com/downloads) and
-[Docker Desktop](https://www.docker.com/products/docker-desktop/) — **R and every package live inside
-the image**, so there is nothing else to manage. Download the source and build the image once:
+**Docker image (recommended)**
+The only thing you install is [Docker Desktop](https://www.docker.com/products/docker-desktop/) —
+**R and every package live inside the image**, so there is nothing else to manage. Pull the pinned
+public image from GitHub Container Registry:
 
 ```bash
-git clone https://github.com/micpreuss/AnchorMap.git    # download the source
-cd AnchorMap                                             # enter the project folder
-docker build -t anchormap:0.1.0 -f docker/Dockerfile .  # build the image (a few minutes)
+docker pull ghcr.io/micpreuss/anchormap:0.1.0
 ```
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
   anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 #> ... C5_sub0 -> anthro [sharp] ...      (results written to ./results/demo)
 ```
 
 Then point it at your own inputs — see [Running on your own data](#running-on-your-own-data) below.
-(The repository must be reachable from your machine.)
+To build and validate the image from source instead, clone the repository and run
+`docker build -t anchormap:0.1.0 -f docker/Dockerfile .` from its root.
 
 ## Quick start
 
@@ -116,11 +115,11 @@ run_plots("synthetic_rds_plots", out_dir = "results/demo/figures")
 
 ```bash
 # score each cluster's anchoring (also runs the reliability z-sweep)
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
   anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 
 # render the figures
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
   plot_anchors --config synthetic_rds_plots --out-dir results/demo/figures
 ```
 
@@ -171,7 +170,7 @@ current folder (the repo) into the container as `/work`, and `-w /work` makes it
 `inst/fixtures/...` resolves:
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
   anchor_map --config example_disease \
     --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
     --out-dir results/example_disease
@@ -184,7 +183,7 @@ docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
 ```bash
 docker run --rm \
   -v "$PWD/data:/data:ro" -v "$PWD/out:/out" \
-  anchormap:0.1.0 \
+  ghcr.io/micpreuss/anchormap:0.1.0 \
   anchor_map --config /data/myrun.yaml --out-dir /out --threads 4
 ```
 
@@ -317,7 +316,26 @@ See `?run_anchormap` for the full reference.
 
 The Docker image pins R (`rocker/r-ver:4.6.0`) and every package to a single dated CRAN snapshot, and
 **self-validates at build time** — the build fails if the engine or the figure stack regresses.
-Reference the image by version tag, never `latest`.
+Use a version tag for reproducible scientific runs. GHCR also publishes `latest` as a convenient
+pointer to the newest release.
+
+### Publishing a container release
+
+The [GHCR workflow](.github/workflows/publish-container.yml) builds and publishes the image whenever
+a semantic version tag such as `v0.1.0` is pushed. The tag must match `Version:` in `DESCRIPTION`; the
+workflow publishes both `ghcr.io/micpreuss/anchormap:0.1.0` and
+`ghcr.io/micpreuss/anchormap:latest`. It uses GitHub's built-in `GITHUB_TOKEN`, so no registry secret
+is required.
+
+```bash
+git tag -a v0.1.0 -m "AnchorMap 0.1.0"
+git push origin v0.1.0
+```
+
+After the first successful publication, open the `anchormap` package settings on GitHub and change
+its visibility to **Public**. Public GHCR images can be pulled anonymously; GitHub warns that this
+visibility change cannot be reversed. Do not move or reuse a released version tag; increment
+`DESCRIPTION` and publish a new tag for the next release.
 
 ## Validation
 

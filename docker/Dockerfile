@@ -17,6 +17,11 @@
 
 FROM rocker/r-ver:4.6.0
 
+LABEL org.opencontainers.image.title="AnchorMap" \
+      org.opencontainers.image.description="Correlation-aware ontology anchoring for latent genetic cluster factors" \
+      org.opencontainers.image.source="https://github.com/micpreuss/AnchorMap" \
+      org.opencontainers.image.licenses="MIT"
+
 # ---- system deps: procps (Nextflow ps/trace) + build libs + figure-render libs ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
       procps \

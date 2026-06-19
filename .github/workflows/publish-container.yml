@@ -1,0 +1,64 @@
+name: Publish container
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  IMAGE_NAME: ghcr.io/micpreuss/anchormap
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_version="${GITHUB_REF_NAME#v}"
+          package_version="$(awk -F ': *' '$1 == "Version" { print $2 }' DESCRIPTION)"
+          if [[ "$image_version" != "$package_version" ]]; then
+            echo "Tag version $image_version does not match DESCRIPTION version $package_version" >&2
+            exit 1
+          fi
+
+      - name: Log in to GHCR
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          flavor: latest=auto
+          tags: type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=AnchorMap
+            org.opencontainers.image.description=Correlation-aware ontology anchoring for latent genetic cluster factors
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=https://github.com/micpreuss/AnchorMap
+
+      - name: Build and push image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
