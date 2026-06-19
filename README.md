@@ -1,7 +1,7 @@
 # AnchorMap
 
-Top-level index for the project. AnchorMap is a portable, reproducible **R (+ planned Nextflow)**
-tool that generalizes the `cluster_anchoring` method: given latent **cluster factors** and their
+Top-level index for the project. AnchorMap is a portable, reproducible **R + Docker** tool (with a
+Nextflow container-validation harness) that generalizes the `cluster_anchoring` method: given latent **cluster factors** and their
 genetic correlations (`rg`) to a trait panel, it scores — competitively, size-aware, and
 correlation-aware — **which ontology domain each cluster anchors to**, how confidently, and whether
 the anchor is *sharp* or *diffuse*.
@@ -22,10 +22,10 @@ not unit tests alone.
 
 ## Status
 
-**Phases 1–4 complete — the R engine is a validated drop-in for the Python reference, ingests a
-GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sweep, and renders the
-publication-ready figures.** The remaining phase (Docker + Nextflow) is designed in the ADD but not
-yet built:
+**Phases 1–5 complete — the R engine is a validated drop-in for the Python reference, ingests a
+GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sweep, renders the
+publication-ready figures, and ships as a pinned, self-validating Docker image** (with a Nextflow
+harness that proves the image runs under Nextflow):
 
 1. **Phase 1 — R engine port + fixture** ✅ — `R/` + [anchor_map.R](anchor_map.R), validated by
    cross-language parity on the anthro + disease tracks.
@@ -54,8 +54,16 @@ yet built:
    AUC↔rg divergence at sign-split classes survives. The only recomputation — the cross-cluster
    specificity z — is **byte-identical to the Python reference's `cluster_distinctive_categories.tsv`** on
    the disease track (15/15 clusters). Ports `plot_anchors.py` / `plot_specificity{,_diagonal}.py`.
-5. **Phase 5 — Docker + Nextflow** *(designed)* — pinned `rocker/r-ver:4.4.2` image + `ANCHORMAP`
-   process. The container/orchestration rows in CLAUDE.md remain *designed* — the only phase not yet built.
+5. **Phase 5 — Docker + Nextflow harness** ✅ — the pinned, self-validating **Docker image** is the tool
+   and primary run interface ([docker/Dockerfile](docker/Dockerfile)): `rocker/r-ver:4.6.0` (= the
+   validated host R) + a single dated P3M snapshot reproducing the validated `future.apply 1.20.2` /
+   `ggplot2 4.0.3`; `procps` / `USER root` / `ENTRYPOINT []` fixes; **no GenomicSEM** (the engine reads
+   `ldsc()` `.rds` with base `readRDS`); two build-time self-tests (synthetic `.rds` → C5_sub0 anthro
+   [sharp]; figure render). **Nextflow is a container-validation harness, not orchestration**
+   ([nextflow/main.nf](nextflow/main.nf)): a single `ANCHORMAP_SMOKE` process — `test` (local) is the CI
+   gate (entrypoint / procps / output capture), `gcp` (Google Batch, spot) is a one-time `USER root` /
+   GCS-FUSE check. **Diverges from ADD §7.3 deliberately**: base `4.6.0` not `4.4.2` (match the validated
+   env), Nextflow scoped to validation. See [docker/README.md](docker/README.md).
 
 The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendored
 `claude-science-scaffold/` subdir is gitignored (it is its own repo).
@@ -163,10 +171,13 @@ GenomicSEM .rds ─► ingest_rds.R   per-trait       source: trait_rg→    IVW
 
 ## Requirements
 
-R ≥ 4.4 with `data.table`, `yaml`, `future`, `future.apply` (required; the last two drive the Phase-3
-z-sweep) and `poolr` (optional, `n_eff` cross-check). The Phase-4 figures additionally need `ggplot2`,
-`patchwork`, `scales`, `ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is
-absent). No `argparse`/`testthat` needed — the CLI and tests use base R.
+R ≥ 4.4 with `data.table`, `yaml`, `future`, **`future.apply` ≥ 1.20** (required; the last two drive the
+Phase-3 z-sweep — note 1.11.x has a `future.globals` regression that breaks the sweep) and `poolr`
+(optional, `n_eff` cross-check). The Phase-4 figures additionally need `ggplot2`, `patchwork`, `scales`,
+`ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is absent). No
+`argparse`/`testthat` needed — the CLI and tests use base R. **Or skip host R entirely and use the pinned
+image** (`docker run anchormap:0.1.0 …`), which carries the exact validated versions (R 4.6.0,
+`future.apply 1.20.2`, `ggplot2 4.0.3`).
 
 ## Run
 
@@ -183,6 +194,21 @@ Rscript tests/run_tests.R                                        # Phase-1 analy
 Rscript tests/test_phase2.R                                      # Phase-2: delta-method, round-trip, fallback, VIF-invariance
 Rscript tests/test_phase3.R                                      # Phase-3: primary-slice parity, thread-invariance, label_stable
 bash    validation/run_oracle.sh                                 # full cross-language parity vs Python
+```
+
+### Phase 5 — pinned image + Nextflow harness
+
+```bash
+# Build the image (THE tool). The build runs two self-tests; it fails if either regresses.
+docker build -t anchormap:0.1.0 -f docker/Dockerfile .          # release: add --platform linux/amd64
+
+# Run AnchorMap reproducibly via the image (primary interface; mount cwd as /work):
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  Rscript /opt/anchormap/anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4
+
+# Validate the image runs flawlessly UNDER Nextflow (not how you run AnchorMap):
+nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml   # local CI gate
+# nextflow run nextflow/main.nf -profile gcp  -params-file nextflow/params/gcp.yaml  # one-time Batch/FUSE check
 ```
 
 ## Validation (cross-language parity vs the Python reference)
@@ -218,6 +244,7 @@ Short pointers only — the authoritative text lives in [CLAUDE.md](CLAUDE.md).
 - **Porting gotchas:** scipy `fisher_exact` returns the *sample* OR `(a·d)/(b·c)` (not R's
   conditional-MLE); `perm_p` is not bit-reproducible across languages; `poolr::meff` needs cleaned/PD
   matrices. See CLAUDE.md → *Gotchas*.
-- **Compute (designed):** pin everything (base image by tag, CRAN via dated P3M snapshot, GenomicSEM
-  by commit); reference images by version, never `latest`; carry the parent's `procps` / `USER root` /
-  `ENTRYPOINT []` container fixes.
+- **Compute (built):** the image pins everything (base `rocker/r-ver:4.6.0` by tag + CRAN via one dated
+  P3M snapshot reproducing the validated package set); referenced by version tag, never `latest`; carries
+  the parent's `procps` / `USER root` / `ENTRYPOINT []` fixes. GenomicSEM is omitted (the engine consumes
+  `ldsc()` `.rds`, never runs it). Build context excludes the scaffold + results via `.dockerignore`.

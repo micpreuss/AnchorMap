@@ -6,7 +6,7 @@ correlations (`rg`) to a trait panel, it scores — competitively, size-aware, a
 **which ontology domain each cluster anchors to**, how confidently, and whether the anchor is *sharp*
 or *diffuse*.
 
-**Status: Phases 1–3 complete (R engine), later phases designed.** The R engine in [R/](R/) +
+**Status: Phases 1–5 complete.** The R engine in [R/](R/) +
 [anchor_map.R](anchor_map.R) is a validated drop-in for the Python reference (exact deterministic
 parity on the anthro + disease tracks; see [README.md](README.md)). **Phase 2 built**: GenomicSEM
 `.rds` ingestion ([R/ingest_rds.R](R/ingest_rds.R) — vech-indexed delta-method `rg_se`, `S`→rg
@@ -34,27 +34,42 @@ config-driven, reading only the scored TSVs. The four channels stay distinct (AU
 signed `pooled_rg` = diverging colour, coherence = alpha, `q<q_sig` = ring/mask) so the AUC↔rg
 divergence at sign-split classes survives. The only recomputation (cross-cluster specificity z) is
 **byte-identical to the Python reference's `cluster_distinctive_categories.tsv`** on the disease track.
-**New deps:** `ggplot2`, `patchwork`, `scales`, `ggrepel` (and optional `ragg`). Still
-designed-not-built: the **Dockerfile + Nextflow process** (Phase 5) — so the container/orchestration
-rows below remain *designed*. The project is **under git**
-(GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is gitignored
-(it is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as
-the source of truth; the plan for the next phase goes in `.agents/plans/`.
+**New deps:** `ggplot2`, `patchwork`, `scales`, `ggrepel` (and optional `ragg`). **Phase 5 built**:
+the pinned, self-validating **Docker image** ([docker/Dockerfile](docker/Dockerfile)) is now the tool +
+the primary run interface (`docker run anchormap:0.1.0 Rscript /opt/anchormap/anchor_map.R --config <yaml>`):
+`rocker/r-ver:4.6.0` (= the host R the engine was validated on) + a single dated P3M snapshot reproducing
+the validated `future.apply 1.20.2` / `ggplot2 4.0.3`, the `procps` / `USER root` / `ENTRYPOINT []` fixes,
+and two build-time self-tests (the synthetic-`.rds` engine run recovers C5_sub0 → anthro [sharp]; the
+ggplot stack renders a figure — so a bad dep/engine/figure fails `docker build`). **GenomicSEM is omitted**
+(the engine reads `ldsc()` `.rds` with base `readRDS`, never runs `ldsc()`). **Nextflow is a
+container-validation harness, NOT an orchestration layer** ([nextflow/main.nf](nextflow/main.nf)): a single
+`ANCHORMAP_SMOKE` process proves the image runs flawlessly under Nextflow — `test` (local) is the CI gate
+for the entrypoint/procps/output-capture contract; `gcp` (Google Batch, spot) is a one-time check for the
+`USER root`/GCS-FUSE write fix. **Two deliberate divergences from the ADD §7.3**: base image `4.6.0` not
+`4.4.2` (to match the validated env — the 4.4.2 "parent-parity" reason was GenomicSEM image alignment,
+which AnchorMap doesn't use), and Nextflow scoped to validation, not production orchestration. The project
+is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is
+gitignored (it is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as the source of truth (note
+the two Phase-5 divergences above); the plan for the next phase goes in `.agents/plans/`.
 
 ---
 
 ## Project type
 
-Five-axis classification (as **designed** — not yet realized in code):
+Five-axis classification:
 
-- **Orchestration:** Nextflow DSL2 (a single `ANCHORMAP` process) **+** a local R engine. *Neither built yet.*
-- **Compute backend:** Mixed — local R for the engine; Google Batch (spot) for production, mirroring `UKBB_CLUSTER_GWAS`.
+- **Orchestration:** a local R engine (the tool) **+** a Nextflow DSL2 **container-validation harness**
+  (a single `ANCHORMAP_SMOKE` process — built). Nextflow is *not* a production run path; AnchorMap is run
+  directly via `docker run` / `Rscript`. The harness only proves the image obeys the Nextflow container contract.
+- **Compute backend:** local R / `docker run` for the engine; the `gcp` (Google Batch, spot) profile exists
+  only for the one-time container-on-Batch FUSE check, mirroring `UKBB_CLUSTER_GWAS`.
 - **Domain:** Statistical genetics (genetic-correlation / cluster anchoring; Li & Ji n_eff, CAMERA VIF, Mann–Whitney AUC, IVW Fisher-z, BH-FDR) **and** a reusable **R method/tool package** generalizing a Python reference.
 - **Data locality:** External — consumes `UKBB_CLUSTER_GWAS` outputs (sibling-repo paths today; `gs://` under the `gcp` profile later). AnchorMap itself ships only small test fixtures.
-- **Reproducibility:** Containers *(designed)* — pinned `rocker/r-ver:4.4.2` + dated Posit P3M CRAN snapshot + GenomicSEM pinned commit. **⚠ Currently nothing is pinned** (no Dockerfile/renv.lock/DESCRIPTION) — see Gaps.
+- **Reproducibility:** Containers **(built)** — pinned `rocker/r-ver:4.6.0` (= the validated host R) + a single
+  dated Posit P3M CRAN snapshot (no GenomicSEM; see Phase-5 status). The image self-validates at build time.
 
-No build system or test suite exists yet. The intended posture: a small R package (`R/*.R` modules +
-a `--config <yaml>` CLI) validated by **cross-language parity against the Python reference**, not unit tests alone.
+The posture: a small R package (`R/*.R` modules + a `--config <yaml>` CLI) validated by **cross-language
+parity against the Python reference** (analytic tests in [tests/](tests/)), shipped as a pinned image.
 
 ---
 
@@ -88,14 +103,13 @@ AnchorMap/
 ├── R/plot.R                  ← Phase-4 ggplot2 figures (lollipop, dot-heatmap, AUC-vs-coherence, specificity + diagonal)
 ├── anchor_map.R              ← engine CLI entry (--config <yaml> [--rds <file>] [--z-vector] [--threads])
 ├── R/plot_anchors.R          ← Phase-4 figures CLI (--config <plots.yaml> [--q-sig --rg-floor --min-clusters])
-├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke) + carey_rint15_plots.yaml (figures)
+├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke) + carey_rint15_plots.yaml (figures) + synthetic_rds_plots.yaml (figure self-test)
 ├── ontology/                 ← disease/anthro/lab ontology TSVs (Input D)
 ├── tests/{run_tests,test_phase2,test_phase3}.R + tests/fixtures/   ← analytic + oracle-parity + synthetic-.rds fixtures
 ├── validation/               ← R-vs-Python oracle comparator
 ├── results/<run_label>/      ← engine outputs (TSVs + anchormap.log) + figures/ (Phase-4 PNG+PDF + distinctive TSV)
-└── (planned, not yet created):
-    ├── docker/Dockerfile     ← pinned rocker image (Phase 5)
-    └── nextflow/             ← ANCHORMAP process + nextflow.config (Phase 5)
+├── docker/                   ← Phase-5 THE TOOL: Dockerfile (rocker/r-ver:4.6.0 + P3M pin + 2 self-tests) + README
+└── nextflow/                 ← Phase-5 container-validation harness: main.nf (ANCHORMAP_SMOKE) + nextflow.config + params/{test,gcp}.yaml
 ```
 
 The **reference engine being ported** lives in the sibling project:
@@ -194,14 +208,25 @@ ontology TSV  ───────────┘                              
 
 ---
 
-## Running stages (designed; not yet runnable)
+## Running stages
 
 ```bash
-# Engine (once R/ + anchor_map.R exist):
-Rscript anchor_map.R --config config/carey_rint15_anthro.yaml
+# Engine — bare R (host):
+Rscript anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4
+
+# Engine — via the pinned image (THE primary, reproducible run interface; mount cwd as /work):
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+  Rscript /opt/anchormap/anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4
 
 # Phase-4 figures (reads the scored TSVs the engine wrote; PNG+PDF into results/<run>/figures/):
 Rscript R/plot_anchors.R --config configs/carey_rint15_plots.yaml
+
+# Phase-5 build the image (build IS the self-test: C5_sub0 anthro sharp + a figure render):
+docker build -t anchormap:0.1.0 -f docker/Dockerfile .          # release: add --platform linux/amd64
+
+# Phase-5 Nextflow container-validation harness (NOT how you run AnchorMap):
+nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml   # local CI gate
+# nextflow run nextflow/main.nf -profile gcp -params-file nextflow/params/gcp.yaml   # one-time Batch/FUSE check (needs push + GCP creds)
 
 # Regenerate the Python oracle to validate against (in the sibling repo):
 cd "../UKBB_CLUSTER_GWAS/scripts/cluster_anchoring"

@@ -14,3 +14,12 @@ claude-science-scaffold/
 # Editor / OS
 *~
 .idea/
+
+# Nextflow harness transient artifacts (Phase 5 — see nextflow/)
+work/
+.nextflow/
+.nextflow.log*
+trace-*.txt
+report-*.html
+timeline-*.html
+results/anchormap_smoke/

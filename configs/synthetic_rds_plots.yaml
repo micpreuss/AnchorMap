@@ -1,0 +1,26 @@
+# AnchorMap — figures config for the self-contained SYNTHETIC run (Phase-5 figure self-test).
+# Single track over results/synthetic_rds/ (the .rds smoke). Its purpose is NOT analysis but to
+# exercise the figure stack (ggplot2 / patchwork / scales / ggrepel / ragg / cairo) inside the
+# Docker image at build time — see docker/Dockerfile self-test #2. Run after the engine smoke:
+#   Rscript anchor_map.R    --config configs/synthetic_rds.yaml
+#   Rscript R/plot_anchors.R --config configs/synthetic_rds_plots.yaml
+#
+# The synthetic run has only 3 clusters (< spec_min_clusters), so the cross-cluster specificity
+# panels skip gracefully (plot_anchors.R L94-97) — the lollipop + dot-heatmap + scatter still
+# render, which is all that's needed to validate the figure stack.
+
+out_dir: results/synthetic_rds/figures
+top_k: 8
+lollipop_ncols: 3
+scatter: true            # AUC-vs-coherence diagnostic (renders fine with the 2 synthetic categories)
+rg_cap: 0.55
+row_order_track: synthetic
+q_sig: 0.05
+spec_rg_floor: 0.10
+spec_min_clusters: 5     # 3 synthetic clusters < 5 -> specificity panels skip (intended)
+
+tracks:
+  - name: synthetic       # 3 cluster factors x {anthro, cardio} from synthetic_ldsc_panel.rds
+    level: anthro_class
+    scores: results/synthetic_rds/category_anchor_scores.tsv
+    labels: results/synthetic_rds/cluster_anchor_labels.tsv

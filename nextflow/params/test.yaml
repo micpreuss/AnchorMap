@@ -1,0 +1,5 @@
+# AnchorMap harness — LOCAL test profile (CI gate). Uses the locally-built image tag.
+#   docker build -t anchormap:0.1.0 -f docker/Dockerfile .
+#   nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml
+anchormap_container: anchormap:0.1.0
+smoke_cpus: 2
