@@ -309,7 +309,7 @@ diagonal) · `R/main.R` (CLI/config/log). `config/*.yaml` canonical params · `t
   libxml2-dev cmake git ca-certificates locales && rm -rf /var/lib/apt/lists/*`.
 - **R deps (pinned):** dated **Posit Package Manager (P3M) snapshot** for CRAN packages
   (`poolr, data.table, Matrix, future, future.apply, optparse, yaml/jsonlite` + plotting:
-  `ggplot2, patchwork, ragg, scales`), and
+  `ggplot2, patchwork, ragg, scales, ggrepel`), and
   `remotes::install_github("GenomicSEM/GenomicSEM@<commit>")` pinned to a commit/tag.
 - **Project fixes carried** (from `docker/postgwas/README.md`): `USER root` (write to GCS-FUSE work dirs
   on Google Batch) + `ENTRYPOINT []` (prevent an upstream entrypoint from intercepting Nextflow's
@@ -428,10 +428,18 @@ Goal: parallel z-sweep and `perm_p`.
 Deliverables: ✅ `sensitivity.R` (z-vector, `future`); ✅ sensitivity TSVs + stability flag; ✅ threaded `perm_p`.
 Gate: results invariant to thread count; z=4 slice == Phase-1 primary output.
 
-**Phase 4 — Visualization.**
+**Phase 4 — Visualization. ✅ BUILT.**
 Goal: publication-ready anchor + cross-cluster specificity figures from the scored TSVs.
-Deliverables: ✅ `R/plot.R` + a `plots` config — lollipop small-multiples (AUC x-axis, stem = signed `pooled_rg`, alpha = coherence, ring = `q<0.05`), cluster×category dot-heatmap (size = AUC, colour = signed `pooled_rg`, ★ = auto-label), AUC-vs-coherence diagnostic, cross-cluster specificity heatmap + its diagonal reduction; PNG + PDF per track.
-Gate: figures render headless (ragg/Agg) for the anthro + disease tracks; encodings match the reference (AUC and `pooled_rg` are distinct channels — they diverge at sign-split classes such as Lipids).
+Deliverables: ✅ `R/plot.R` + CLI `R/plot_anchors.R` + `configs/carey_rint15_plots.yaml` — lollipop
+small-multiples (AUC x-axis, stem = signed `pooled_rg`, alpha = coherence, ring = `q<0.05`, ★ =
+auto-label), cluster×category dot-heatmap (size = AUC, colour = signed `pooled_rg`, ★ = auto-label),
+AUC-vs-coherence diagnostic, cross-cluster specificity heatmap + its diagonal reduction; PNG + PDF.
+**New deps:** `ggplot2`, `patchwork`, `scales`, `ggrepel` (+ optional `ragg`; cairo fallback).
+Gate: ✅ figures render headless (ragg if present else cairo) for the anthro + disease tracks; encodings
+match the reference (AUC and `pooled_rg` are distinct channels — visible at C2_sub0/C2_sub1, blue at high
+AUC); the cross-cluster specificity z (the only recomputation) is **byte-identical to the Python
+`cluster_distinctive_categories.tsv`** on the disease track. *(Lab track activates once a
+`results/carey_rint15_lab/` run exists — stubbed/commented in the plot config.)*
 
 **Phase 5 — Docker + Nextflow.**
 Goal: shippable, reproducible container + process.

@@ -25,8 +25,18 @@ deps:** `future`, `future.apply`. Determinism is engineered: each z-task re-seed
 **and pins the RNG kind to Mersenne-Twister** (future.seed flips it to L'Ecuyer), so the
 z = `h2_z_threshold` slice is byte-identical to the Phase-1/2 single-z primaries and the whole sweep
 is thread-count- and backend-invariant; `perm_p` stays serial in `score.R` to protect that parity.
-Still designed-not-built: the **plotting/visualization module** (Phase 4) and the **Dockerfile +
-Nextflow process** (Phase 5) — so the container/orchestration rows below remain *designed*. The project is **under git**
+**Phase 4 built**: the **visualization module** ([R/plot.R](R/plot.R) + CLI
+[R/plot_anchors.R](R/plot_anchors.R), config [configs/carey_rint15_plots.yaml](configs/carey_rint15_plots.yaml))
+ports the reference `plot_anchors.py`/`plot_specificity*.py` encodings to ggplot2 — per-track lollipop
+small-multiples, a cluster×category dot-heatmap, an AUC-vs-coherence diagnostic, and the cross-cluster
+specificity heatmap + its diagonal reduction — PNG+PDF, headless (ragg if present else cairo),
+config-driven, reading only the scored TSVs. The four channels stay distinct (AUC = x/size,
+signed `pooled_rg` = diverging colour, coherence = alpha, `q<q_sig` = ring/mask) so the AUC↔rg
+divergence at sign-split classes survives. The only recomputation (cross-cluster specificity z) is
+**byte-identical to the Python reference's `cluster_distinctive_categories.tsv`** on the disease track.
+**New deps:** `ggplot2`, `patchwork`, `scales`, `ggrepel` (and optional `ragg`). Still
+designed-not-built: the **Dockerfile + Nextflow process** (Phase 5) — so the container/orchestration
+rows below remain *designed*. The project is **under git**
 (GitHub: `micpreuss/AnchorMap`, private); the vendored `claude-science-scaffold/` subdir is gitignored
 (it is its own repo). Read [ANALYSIS_DESIGN.md](ANALYSIS_DESIGN.md) as
 the source of truth; the plan for the next phase goes in `.agents/plans/`.
@@ -56,7 +66,7 @@ a `--config <yaml>` CLI) validated by **cross-language parity against the Python
 | Compute | local R (engine); Google Batch spot for production; submit from `nf-head`, not laptop |
 | Containers / envs | `rocker/r-ver:4.4.2` (pinned) + `procps` + `USER root` + `ENTRYPOINT []`; image `anchormap:0.1.0` → Artifact Registry `us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/`; **referenced by version tag, never `latest`** |
 | Storage | reads sibling `UKBB_CLUSTER_GWAS` files; writes `results/<run_label>/{primary,sensitivity,figures,logs}/` |
-| Languages | R ≥4.4 (`poolr`, `data.table`, `Matrix`, `future`/`future.apply`, `yaml`, `argparse`, `testthat`; plotting `ggplot2`/`patchwork`/`ragg`/`scales`); R `remotes` for GenomicSEM |
+| Languages | R ≥4.4 (`poolr`, `data.table`, `Matrix`, `future`/`future.apply`, `yaml`, `argparse`, `testthat`; plotting `ggplot2`/`patchwork`/`scales`/`ggrepel`/`ragg`); R `remotes` for GenomicSEM |
 | Methods | Li & Ji (2005) n_eff via `poolr::meff(R,"liji")`; CAMERA VIF; Mann–Whitney/Wilcoxon AUC; label-permutation null; IVW Fisher-z pooled rg; BH-FDR; anchor-shape ruleset |
 | External reference data | FinnGen **R12** FIN LDSC `--rg` summary (trait×trait rg); curated `category/anthro/lab` ontologies; GenomicSEM `ldsc()` S/V objects |
 
@@ -72,15 +82,17 @@ AnchorMap/
 │   └── anchormap-phase1-r-engine-port.md   ← ★ the next thing to build
 ├── .claude/                  ← injected scaffold (skills, settings); do not treat as project code
 ├── claude-science-scaffold/  ← vendored source of .claude (own git repo) — not part of AnchorMap
-├── R/{io,gate,redundancy,score,label}.R   ← Phase-1 engine modules (plot/main = Phases 4–5)
+├── R/{io,gate,redundancy,score,label}.R   ← Phase-1 engine modules
 ├── R/ingest_rds.R            ← Phase-2 GenomicSEM .rds reader (vech delta-method, partition, standardize)
 ├── R/sensitivity.R           ← Phase-3 parallel z-sweep (score_at_z, run_sensitivity, future.apply parallel_lapply)
-├── anchor_map.R              ← CLI entry (--config <yaml> [--rds <file>])
-├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke)
+├── R/plot.R                  ← Phase-4 ggplot2 figures (lollipop, dot-heatmap, AUC-vs-coherence, specificity + diagonal)
+├── anchor_map.R              ← engine CLI entry (--config <yaml> [--rds <file>] [--z-vector] [--threads])
+├── R/plot_anchors.R          ← Phase-4 figures CLI (--config <plots.yaml> [--q-sig --rg-floor --min-clusters])
+├── configs/*.yaml            ← canonical params (reuse parent configs verbatim); + synthetic_rds.yaml (.rds smoke) + carey_rint15_plots.yaml (figures)
 ├── ontology/                 ← disease/anthro/lab ontology TSVs (Input D)
-├── tests/{run_tests,test_phase2}.R + tests/fixtures/   ← analytic + oracle-parity + synthetic-.rds fixtures
+├── tests/{run_tests,test_phase2,test_phase3}.R + tests/fixtures/   ← analytic + oracle-parity + synthetic-.rds fixtures
 ├── validation/               ← R-vs-Python oracle comparator
-├── results/<run_label>/      ← engine outputs (two TSVs + anchormap.log)
+├── results/<run_label>/      ← engine outputs (TSVs + anchormap.log) + figures/ (Phase-4 PNG+PDF + distinctive TSV)
 └── (planned, not yet created):
     ├── docker/Dockerfile     ← pinned rocker image (Phase 5)
     └── nextflow/             ← ANCHORMAP process + nextflow.config (Phase 5)
@@ -100,6 +112,7 @@ GenomicSEM ldsc() .rds  ─┐
 rg long-table (TSV)  ────┤        (z gate)   (n_eff/VIF)    (AUC,perm_p,  (FDR,label,
 LDSC --rg summary  ──────┘                    trait_rg|proxy) pooled rg,ORA) shape)
 ontology TSV  ───────────┘                                   └─ sensitivity.R sweeps z in parallel ┘
+                              scored TSVs ─► plot.R (Phase 4) ─► figures/ (lollipop · dot-heatmap · AUC-vs-coherence · specificity + diagonal)
 ```
 
 - **Two input routes (same engine):** the standardized `rg` long-table TSV **or** a GenomicSEM `ldsc()` `.rds`
@@ -186,6 +199,9 @@ ontology TSV  ───────────┘                              
 ```bash
 # Engine (once R/ + anchor_map.R exist):
 Rscript anchor_map.R --config config/carey_rint15_anthro.yaml
+
+# Phase-4 figures (reads the scored TSVs the engine wrote; PNG+PDF into results/<run>/figures/):
+Rscript R/plot_anchors.R --config configs/carey_rint15_plots.yaml
 
 # Regenerate the Python oracle to validate against (in the sibling repo):
 cd "../UKBB_CLUSTER_GWAS/scripts/cluster_anchoring"

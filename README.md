@@ -22,9 +22,10 @@ not unit tests alone.
 
 ## Status
 
-**Phases 1–3 complete — the R engine is a validated drop-in for the Python reference, ingests a
-GenomicSEM `.rds` directly, and runs a parallel reliability-threshold sensitivity sweep.** Later
-phases are designed in the ADD but not yet built:
+**Phases 1–4 complete — the R engine is a validated drop-in for the Python reference, ingests a
+GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sweep, and renders the
+publication-ready figures.** The remaining phase (Docker + Nextflow) is designed in the ADD but not
+yet built:
 
 1. **Phase 1 — R engine port + fixture** ✅ — `R/` + [anchor_map.R](anchor_map.R), validated by
    cross-language parity on the anthro + disease tracks.
@@ -44,11 +45,17 @@ phases are designed in the ADD but not yet built:
    `random_seed` **and pins the RNG kind to Mersenne-Twister** (`future.seed` flips it to L'Ecuyer),
    so the z = `h2_z_threshold` slice is byte-identical to the Phase-1/2 single-z primaries and the
    sweep is thread-count- and backend-invariant; `perm_p` stays serial to protect that parity.
-4. **Phase 4 — visualization** *(designed)* — publication-ready figures (lollipop small-multiples,
-   cluster×category dot-heatmap, AUC-vs-coherence diagnostic, cross-cluster specificity heatmap +
-   diagonal) via `R/plot.R` (ggplot2), config-driven and headless, from the scored TSVs.
+4. **Phase 4 — visualization** ✅ — publication-ready figures via [R/plot.R](R/plot.R) (ggplot2) + CLI
+   [R/plot_anchors.R](R/plot_anchors.R) + config [configs/carey_rint15_plots.yaml](configs/carey_rint15_plots.yaml):
+   per-track lollipop small-multiples, a cluster×category dot-heatmap, an AUC-vs-coherence diagnostic,
+   and the cross-cluster specificity heatmap + its diagonal reduction — PNG + PDF, config-driven and
+   headless (ragg if present, else cairo), reading only the scored TSVs. The four channels stay distinct
+   (AUC = x/size, signed `pooled_rg` = diverging colour, coherence = alpha, `q<q_sig` = ring/mask) so the
+   AUC↔rg divergence at sign-split classes survives. The only recomputation — the cross-cluster
+   specificity z — is **byte-identical to the Python reference's `cluster_distinctive_categories.tsv`** on
+   the disease track (15/15 clusters). Ports `plot_anchors.py` / `plot_specificity{,_diagonal}.py`.
 5. **Phase 5 — Docker + Nextflow** *(designed)* — pinned `rocker/r-ver:4.4.2` image + `ANCHORMAP`
-   process. The container/orchestration rows in CLAUDE.md remain *designed*.
+   process. The container/orchestration rows in CLAUDE.md remain *designed* — the only phase not yet built.
 
 The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendored
 `claude-science-scaffold/` subdir is gitignored (it is its own repo).
@@ -79,8 +86,10 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendo
     z = `h2_z_threshold` slice equals the primaries byte-for-byte.
   - `anchormap.log` — timestamped steps (incl. per-z gate counts + the `label-stable` summary) ending
     in a `FINISHED` line (status, elapsed, output manifest).
-  - `figures/` *(designed, Phase 4)* — per-track lollipop small-multiples, cluster×category
-    dot-heatmap, AUC-vs-coherence diagnostic, and cross-cluster specificity heatmap + diagonal (PNG + PDF).
+  - `figures/` *(Phase 4)* — per-track lollipop small-multiples, cluster×category dot-heatmap,
+    AUC-vs-coherence diagnostic, and cross-cluster specificity heatmap + diagonal (PNG + PDF), plus
+    `cluster_distinctive_categories.tsv` (`track, cluster_label, distinctive_category, spec_z, pooled_rg,
+    runner_up`). Written by `R/plot_anchors.R` from the scored TSVs, into `results/<run>/figures/`.
 
   See [CLAUDE.md](CLAUDE.md) for the full column contracts, units, sign, and rounding rules.
 
@@ -119,11 +128,21 @@ execution order to catch up on the method (they port the reference 1:1, single z
 7. [R/sensitivity.R](R/sensitivity.R) *(Phase 3)* — wraps steps 3–6 in `score_at_z` (one full re-run
    per reliability threshold) and maps it over `cfg$z_vector` via `parallel_lapply` (`future.apply`,
    multicore/sequential); stacks the two tables with `z_threshold` and flags per-cluster `label_stable`.
+8. [R/plot.R](R/plot.R) *(Phase 4)* — figure builders consuming only the scored TSVs: `natural_order` /
+   `leaf_order` (cluster row + category column ordering), `specificity` + `distinctive_table` (the
+   cross-cluster z), and `fig_lollipops` / `fig_dotheatmap` / `fig_scatter` / `fig_specificity` /
+   `fig_diagonal` with diverging RdBu (rg) / PuOr (specificity) scales and a `save_fig` (ragg→cairo,
+   PNG+PDF). Driven by the separate CLI [R/plot_anchors.R](R/plot_anchors.R) — it does **not** re-run the
+   engine.
 
-Driver: [anchor_map.R](anchor_map.R) —
-`Rscript anchor_map.R --config <yaml> [--threads N] [--rds <file>] [--z-vector 3,4,5]` → the two
-primary TSVs + the two sensitivity TSVs + `anchormap.log`. *(Phase 4 adds `R/plot.R` for the figures —
-a new list item anchors here.)*
+Drivers:
+
+- **Engine** — [anchor_map.R](anchor_map.R):
+  `Rscript anchor_map.R --config <yaml> [--threads N] [--rds <file>] [--z-vector 3,4,5]` → the two
+  primary TSVs + the two sensitivity TSVs + `anchormap.log`.
+- **Figures** — [R/plot_anchors.R](R/plot_anchors.R):
+  `Rscript R/plot_anchors.R --config configs/carey_rint15_plots.yaml [--q-sig N] [--rg-floor N] [--min-clusters N]`
+  → `results/<run>/figures/` (PNG+PDF + the distinctive TSV).
 
 ## Data flow at a glance
 
@@ -145,8 +164,9 @@ GenomicSEM .rds ─► ingest_rds.R   per-trait       source: trait_rg→    IVW
 ## Requirements
 
 R ≥ 4.4 with `data.table`, `yaml`, `future`, `future.apply` (required; the last two drive the Phase-3
-z-sweep) and `poolr` (optional, `n_eff` cross-check). No `argparse`/`testthat` needed — the CLI and
-tests use base R.
+z-sweep) and `poolr` (optional, `n_eff` cross-check). The Phase-4 figures additionally need `ggplot2`,
+`patchwork`, `scales`, `ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is
+absent). No `argparse`/`testthat` needed — the CLI and tests use base R.
 
 ## Run
 
@@ -154,6 +174,8 @@ tests use base R.
 Rscript anchor_map.R --config configs/carey_rint15_anthro.yaml --threads 4   # TSV route -> results/carey_rint15_anthro/
 Rscript anchor_map.R --config configs/carey_rint15.yaml --rds <ldsc_output.rds>   # .rds route (override input)
 Rscript anchor_map.R --config configs/carey_rint15.yaml --z-vector 2,3,4,5,6     # override the z-sweep
+
+Rscript R/plot_anchors.R --config configs/carey_rint15_plots.yaml  # Phase-4 figures -> results/carey_rint15/figures/
 
 Rscript tests/fixtures/make_synthetic_ldsc.R                     # build the synthetic .rds fixtures
 Rscript anchor_map.R --config configs/synthetic_rds.yaml         # .rds-route end-to-end smoke
@@ -178,6 +200,12 @@ bash    validation/run_oracle.sh                                 # full cross-la
   byte-identical to `category_anchor_scores.tsv`; the sweep is invariant to `--threads`; gate counts
   are monotonic in z (anthro 14/15 clusters label-stable across `{3,4,5}`, disease 8/15); no
   `anchor_eligible=FALSE` category labels any cluster at any z.
+- **Figures (Phase 4):** the cross-cluster specificity z (`cluster_distinctive_categories.tsv`) is
+  byte-identical to the Python reference on the disease track (15/15 clusters — `distinctive_category`
+  and `spec_z`); all eight PNG+PDF figures render headless for the anthro + disease tracks; the AUC↔rg
+  divergence is preserved (C2_sub0/C2_sub1 render blue at high AUC — strong enrichment, inverse
+  direction); the positive control C5_sub0 anthro lollipop is red, ringed (`q<0.05`), and starred
+  (auto-label).
 
 ## Conventions
 

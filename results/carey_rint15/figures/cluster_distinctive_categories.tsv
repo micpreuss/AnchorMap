@@ -1,0 +1,31 @@
+track	cluster_label	distinctive_category	spec_z	pooled_rg	runner_up
+disease	C0	Psychiatric	-0.34	0.136	Musculoskeletal(z=-0.2)
+disease	C1	Musculoskeletal	0.64	0.288	Respiratory(z=+0.4)
+disease	C2_sub0	Respiratory	-2.35	-0.278	Musculoskeletal(z=-2.3)
+disease	C2_sub1	Musculoskeletal	-2.07	-0.229	Respiratory(z=-1.9)
+disease	C3	Injury	0.83	0.182	Alcohol-substance(z=+0.8)
+disease	C4	Psychiatric	1.44	0.489	Respiratory(z=+0.5)
+disease	C5_sub0	Cardiovascular	0.72	0.252	Medication-use(z=+0.6)
+disease	C5_sub1	Cardiovascular	1.06	0.305	Endocrine-metabolic(z=+1.0)
+disease	C6_sub0	Respiratory	1.37	0.463	Musculoskeletal(z=+1.1)
+disease	C6_sub1	Psychiatric	1.11	0.423	Respiratory(z=+0.2)
+disease	noise_re0	Cardiovascular	1.29	0.342	Endocrine-metabolic(z=+1.0)
+disease	noise_re1	Musculoskeletal	1.4	0.433	Respiratory(z=+1.2)
+disease	noise_re2	Psychiatric	0.36	0.274	Respiratory(z=+0.1)
+disease	noise_re3	Musculoskeletal	0.68	0.296	Respiratory(z=+0.4)
+disease	noise_re4	Respiratory	0.94	0.376	Psychiatric(z=+0.5)
+anthro	C0	none			
+anthro	C1	none			
+anthro	C2_sub0	Anthropometric	-1.88	-0.103	
+anthro	C2_sub1	none			
+anthro	C3	none			
+anthro	C4	none			
+anthro	C5_sub0	Anthropometric	1.62	0.247	
+anthro	C5_sub1	Anthropometric	0.48	0.133	
+anthro	C6_sub0	none			
+anthro	C6_sub1	none			
+anthro	noise_re0	Anthropometric	0.87	0.172	
+anthro	noise_re1	none			
+anthro	noise_re2	none			
+anthro	noise_re3	none			
+anthro	noise_re4	none			

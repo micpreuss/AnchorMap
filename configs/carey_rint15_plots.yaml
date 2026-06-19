@@ -1,0 +1,29 @@
+# AnchorMap — Phase 4 figures for the Carey RINT-15 run (disease + anthro tracks).
+# Renders the cluster-wise anchoring + cross-cluster specificity views from the scored TSVs.
+# See R/plot.R / plot_anchors.R. Ports cluster_anchoring/configs/carey_rint15_plots.yaml, but
+# repointed at AnchorMap's flat results/<run>/ layout. Paths are relative to the stage root.
+
+out_dir: results/carey_rint15/figures
+top_k: 8                  # categories per lollipop panel
+lollipop_ncols: 3
+scatter: true             # AUC-vs-coherence diagnostic (surfaces sign-split classes)
+rg_cap: 0.55              # symmetric colour limit for signed pooled_rg
+row_order_track: disease  # cluster (row) order is taken from this track's rg profile
+# specificity gate (matches plot_specificity.py defaults; overridable on the CLI)
+q_sig: 0.05
+spec_rg_floor: 0.10       # min |pooled_rg| for an anchor to count as real (avoids spurious z)
+spec_min_clusters: 5      # category must be scored in >= this many clusters for a stable z
+
+tracks:
+  - name: disease
+    level: domain
+    scores: results/carey_rint15/category_anchor_scores.tsv
+    labels: results/carey_rint15/cluster_anchor_labels.tsv
+  - name: anthro            # body-size track (single Anthropometric column: BMI/weight/height)
+    level: anthro_class
+    scores: results/carey_rint15_anthro/category_anchor_scores.tsv
+    labels: results/carey_rint15_anthro/cluster_anchor_labels.tsv
+  # - name: lab             # activate once a results/carey_rint15_lab/ run exists
+  #   level: analyte_class
+  #   scores: results/carey_rint15_lab/category_anchor_scores.tsv
+  #   labels: results/carey_rint15_lab/cluster_anchor_labels.tsv
