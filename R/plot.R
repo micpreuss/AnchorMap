@@ -50,13 +50,36 @@ load_track <- function(t, stage_root, in_dir = NULL) {
   # When in_dir is set, read the engine outputs from there (keeping each track's basename) so the
   # figures can target any engine --out-dir; otherwise resolve the config's paths against stage_root.
   loc <- function(p) if (!is.null(in_dir)) file.path(in_dir, basename(p)) else resolve_path(stage_root, p)
-  s <- data.table::fread(loc(t[["scores"]]), sep = "\t",
+  track_name <- if (is.null(t[["name"]])) "<unnamed>" else as.character(t[["name"]])
+  scores_path <- loc(t[["scores"]]); labels_path <- loc(t[["labels"]])
+  for (path in c(scores_path, labels_path))
+    if (!file.exists(path))
+      stop(sprintf("track '%s': file not found: %s", track_name, path), call. = FALSE)
+
+  s <- data.table::fread(file = scores_path, sep = "\t",
                          na.strings = c("", "NA", "NaN"), showProgress = FALSE)
+  required_scores <- c("level", "eligible", "category", "cluster_label", "pooled_rg", "q",
+                       "coherence", "auc_abs", "n", "rank")
+  missing_scores <- setdiff(required_scores, names(s))
+  if (length(missing_scores))
+    stop(sprintf("track '%s': scores file missing required column(s): %s", track_name,
+                 paste(missing_scores, collapse = ", ")), call. = FALSE)
+
+  levels_present <- sort(unique(as.character(s[["level"]][!is.na(s[["level"]])])))
   s[["eligible"]] <- toupper(as.character(s[["eligible"]])) == "TRUE"
   s <- s[s[["level"]] == t[["level"]] & s[["eligible"]], ]
+  if (!nrow(s))
+    stop(sprintf("track '%s': no eligible rows at level '%s' in %s (levels present: %s)",
+                 track_name, t[["level"]], scores_path,
+                 if (length(levels_present)) paste(levels_present, collapse = ", ") else "<none>"),
+         call. = FALSE)
   s[["coherence"]] <- pmin(pmax(fifelse(is.na(s[["coherence"]]), 1, s[["coherence"]]), 0), 1)
-  labels <- data.table::fread(loc(t[["labels"]]), sep = "\t",
+  labels <- data.table::fread(file = labels_path, sep = "\t",
                               na.strings = c("", "NA"), showProgress = FALSE)
+  missing_labels <- setdiff(c("cluster_label", "auto_label", "anchor_shape"), names(labels))
+  if (length(missing_labels))
+    stop(sprintf("track '%s': labels file missing required column(s): %s", track_name,
+                 paste(missing_labels, collapse = ", ")), call. = FALSE)
   list(name = t[["name"]], level = t[["level"]], s = s, labels = labels)
 }
 
@@ -354,9 +377,9 @@ save_fig <- function(plot, png_path, width, height, pdf = TRUE) {
 #' @param config_path Path to a plot YAML config (or a bare shipped-config name).
 #' @param q_sig,rg_floor,min_clusters Optional overrides of the significance gate.
 #' @param out_dir Optional output-directory override (else `cfg$out_dir`).
-#' @param in_dir Optional input-directory override: read each track's `scores`/`labels` from this
-#'   directory (by basename) instead of the config's paths, so figures can target any engine
-#'   `--out-dir`.
+#' @param in_dir Optional single-track input-directory override: read the track's `scores`/`labels`
+#'   from this directory (by basename) instead of the config paths. Multi-track configs must set
+#'   each track's `scores`/`labels` paths in the config.
 #' @return Invisibly, the character vector of written file paths.
 #' @export
 run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters = NULL,
@@ -372,12 +395,20 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
   if (!is.null(rg_floor))     cfg[["spec_rg_floor"]] <- rg_floor
   if (!is.null(min_clusters)) cfg[["spec_min_clusters"]] <- min_clusters
 
+  in_dir <- if (!is.null(in_dir)) .abs_cwd(in_dir) else NULL
+  if (!is.null(in_dir) && length(cfg[["tracks"]]) > 1L) {
+    track_names <- vapply(cfg[["tracks"]], function(t)
+      if (is.null(t[["name"]])) "<unnamed>" else as.character(t[["name"]]), character(1))
+    stop(sprintf("--in-dir is a single-track convenience; config has %d tracks (%s). Set each ",
+                 length(track_names), paste(track_names, collapse = ", ")),
+         "track's scores/labels paths in the config instead.", call. = FALSE)
+  }
+
   out_dir <- if (!is.null(out_dir)) .abs_cwd(out_dir) else resolve_path(sroot, cfg[["out_dir"]])
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   written <- character(0)
   emit <- function(p) { message(sprintf("[write] %s", p)); written[[length(written) + 1L]] <<- p }
 
-  in_dir <- if (!is.null(in_dir)) .abs_cwd(in_dir) else NULL
   tracks <- lapply(cfg[["tracks"]], load_track, stage_root = sroot, in_dir = in_dir)
   row_order <- natural_order(unlist(lapply(tracks, function(tr) tr[["s"]][["cluster_label"]])))
 

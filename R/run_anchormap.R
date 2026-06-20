@@ -65,6 +65,7 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
 
   # ---- input route: GenomicSEM .rds (Input C) OR rg long-TSV (Input A) ----
   rds_path <- if (!is.null(rds)) .abs_cwd(rds) else cfg[["rds"]]
+  validate_config_sources(cfg, rds_active = !is.null(rds_path))
   trait_rg_override <- NULL
   if (!is.null(rds_path)) {
     rds_path <- resolve_path(sroot, rds_path)

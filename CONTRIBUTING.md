@@ -31,13 +31,16 @@ Run the same checks CI runs (`.github/workflows/ci.yml`):
    Rscript inst/scripts/plot_anchors.R --config synthetic_rds_plots  --in-dir results/ci --out-dir results/ci/figures
    ```
 
-3. **Package check** (recommended for non-trivial changes):
+3. **Package check:**
 
    ```bash
    R CMD build . && R CMD check anchormap_*.tar.gz
    ```
 
-CI runs the test suite and the smoke run on every push and pull request, so these must be green.
+CI runs the test suite, smoke run, and package check on every push and pull request, so these must be
+green. The full MIT text intentionally stays in `LICENSE` so GitHub detects it; R therefore reports
+one tolerated `License stub is invalid DCF` NOTE. A future CRAN submission would restore R's two-line
+MIT stub.
 
 ## Conventions
 

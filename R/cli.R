@@ -83,7 +83,7 @@ plots_parser <- function() {
       optparse::make_option("--out-dir", type = "character", default = NULL,
         help = "output directory for figures (default: out_dir from the config)."),
       optparse::make_option("--in-dir", type = "character", default = NULL,
-        help = "read scored TSVs from this dir (by basename) instead of the config's track paths."),
+        help = "single-track convenience: read scored TSVs from this dir (by basename); multi-track configs must set track paths."),
       optparse::make_option("--q-sig", type = "double", default = NULL,
         help = "significance threshold for rings/masks [default 0.05]."),
       optparse::make_option("--rg-floor", type = "double", default = NULL,

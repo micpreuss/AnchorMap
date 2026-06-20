@@ -316,7 +316,7 @@ diagonal) · `R/main.R` (CLI/config/log). `config/*.yaml` canonical params · `t
   `.command.run` → exit 126).
 - **Build-time smoke test:** `RUN` loads libraries and runs the worked-example fixture, asserting the
   C5_sub0 result — fail the build on regression.
-- **Tagging:** `anchormap:0.1.0`, pushed to Artifact Registry; referenced **by version, never `latest`**.
+- **Tagging:** `anchormap:0.1.1`, pushed to Artifact Registry; referenced **by version, never `latest`**.
 
 ### 7.4 Threading
 

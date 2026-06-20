@@ -20,9 +20,9 @@ run_plots(
 
 \item{out_dir}{Optional output-directory override (else \code{cfg$out_dir}).}
 
-\item{in_dir}{Optional input-directory override: read each track's \code{scores}/\code{labels} from this
-directory (by basename) instead of the config's paths, so figures can target any engine
-\code{--out-dir}.}
+\item{in_dir}{Optional single-track input-directory override: read the track's \code{scores}/\code{labels}
+from this directory (by basename) instead of the config paths. Multi-track configs must set
+each track's \code{scores}/\code{labels} paths in the config.}
 }
 \value{
 Invisibly, the character vector of written file paths.

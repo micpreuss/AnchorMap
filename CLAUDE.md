@@ -36,7 +36,7 @@ divergence at sign-split classes survives. The only recomputation (cross-cluster
 **byte-identical to the Python reference's `cluster_distinctive_categories.tsv`** on the disease track.
 **New deps:** `ggplot2`, `patchwork`, `scales`, `ggrepel` (and optional `ragg`). **Phase 5 built**:
 the pinned, self-validating **Docker image** ([docker/Dockerfile](docker/Dockerfile)) is now the tool +
-the primary run interface (`docker run anchormap:0.1.0 Rscript /opt/anchormap/anchor_map.R --config <yaml>`):
+the primary run interface (`docker run anchormap:0.1.1 Rscript /opt/anchormap/anchor_map.R --config <yaml>`):
 `rocker/r-ver:4.6.0` (= the host R the engine was validated on) + a single dated P3M snapshot reproducing
 the validated `future.apply 1.20.2` / `ggplot2 4.0.3`, the `procps` / `USER root` / `ENTRYPOINT []` fixes,
 and two build-time self-tests (the synthetic-`.rds` engine run recovers C5_sub0 → anthro [sharp]; the
@@ -79,7 +79,7 @@ parity against the Python reference** (analytic tests in [tests/](tests/)), ship
 |---|---|
 | Orchestration | Nextflow DSL2 process `ANCHORMAP`; `output {}` block + `outputDir` (NOT `publishDir`) — inherited from parent |
 | Compute | local R (engine); Google Batch spot for production; submit from `nf-head`, not laptop |
-| Containers / envs | `rocker/r-ver:4.6.0` (pinned; = the validated host R — see the Phase-5 divergence note above) + `procps` + `USER root` + `ENTRYPOINT []`; image `anchormap:0.1.0` → Artifact Registry `us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/`; **referenced by version tag, never `latest`** |
+| Containers / envs | `rocker/r-ver:4.6.0` (pinned; = the validated host R — see the Phase-5 divergence note above) + `procps` + `USER root` + `ENTRYPOINT []`; image `anchormap:0.1.1` → Artifact Registry `us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/`; **referenced by version tag, never `latest`** |
 | Storage | reads sibling `UKBB_CLUSTER_GWAS` files; writes `results/<run_label>/{primary,sensitivity,figures,logs}/` |
 | Languages | R ≥4.4 (`data.table`, `future`/`future.apply`, `yaml`, `optparse` (CLI), `testthat`, optional `poolr`; plotting `ggplot2`/`patchwork`/`scales`/`ggrepel`/`ragg`) |
 | Methods | Li & Ji (2005) n_eff via `poolr::meff(R,"liji")`; CAMERA VIF; Mann–Whitney/Wilcoxon AUC; label-permutation null; IVW Fisher-z pooled rg; BH-FDR; anchor-shape ruleset |
@@ -236,18 +236,18 @@ Rscript inst/scripts/anchor_map.R --config synthetic_rds --out-dir results/synth
 #  your real runs:  Rscript inst/scripts/anchor_map.R --config local/configs/carey_rint15_anthro.yaml --out-dir results/...
 
 # Engine — via the pinned image (THE primary, reproducible run interface; mount cwd as /work):
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.1 \
   anchor_map --config synthetic_rds --out-dir results/synthetic_rds --threads 4
 
 # Figures (reads the scored TSVs the engine wrote; PNG+PDF into the --out-dir).
-# --in-dir reads the scored TSVs from a given engine out-dir (by basename) when it differs:
+# For a single-track plot config, --in-dir reads scored TSVs from a given engine out-dir by basename:
 Rscript inst/scripts/plot_anchors.R --config synthetic_rds_plots --in-dir results/synthetic_rds --out-dir results/synthetic_rds/figures
 
 # Tests (testthat; load_all harness so internals are visible):
 Rscript -e 'testthat::test_local()'
 
 # Build the image (build IS the self-test: C5_sub0 anthro sharp + a figure render):
-docker build -t anchormap:0.1.0 -f docker/Dockerfile .          # release: add --platform linux/amd64
+docker build -t anchormap:0.1.1 -f docker/Dockerfile .          # release: add --platform linux/amd64
 
 # Nextflow container-validation harness (NOT how you run AnchorMap):
 nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.yaml   # local CI gate

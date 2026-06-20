@@ -1,5 +1,5 @@
 # AnchorMap harness — GCP profile (one-time Google Batch / GCS-FUSE write check).
 # Requires the image pushed to Artifact Registry (see docker/README.md) + GCP creds.
 #   nextflow run nextflow/main.nf -profile gcp -params-file nextflow/params/gcp.yaml
-anchormap_container: us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/anchormap:0.1.0
+anchormap_container: us-central1-docker.pkg.dev/lencz-lab-cogent-1/docker-images/anchormap:0.1.1
 smoke_cpus: 2

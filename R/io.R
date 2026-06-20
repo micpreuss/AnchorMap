@@ -36,8 +36,8 @@ load_config <- function(path) {
   cfg
 }
 
-# Fail-early config validation: scientific software should reject a malformed run, not silently
-# produce garbage or no scores. Checks enumerations, required ranges, and incompatible options.
+# Fail-early source-independent config validation: scientific software should reject a malformed
+# run, not silently produce garbage or no scores. Input-source checks run after CLI overrides.
 # Returns `cfg` invisibly on success; otherwise stop()s with an actionable message.
 validate_config <- function(cfg) {
   bad <- character(0)
@@ -71,13 +71,18 @@ validate_config <- function(cfg) {
   if (!length(cfg[["z_vector"]]) || any(!is.finite(cfg[["z_vector"]])) || any(cfg[["z_vector"]] <= 0))
     add("z_vector must be non-empty and all entries finite and > 0")
 
-  # Incompatible combo: explicit trait_rg redundancy needs a matrix source (the .rds route supplies one).
-  if (identical(cfg[["vif_correlation"]], "trait_rg") &&
-      is.null(cfg[["trait_rg_matrix"]]) && is.null(cfg[["rds"]]))
-    add("vif_correlation: trait_rg requires a trait_rg_matrix (or the .rds route); none configured")
-
   if (length(bad))
     stop("Invalid config:\n  - ", paste(bad, collapse = "\n  - "), call. = FALSE)
+  invisible(cfg)
+}
+
+# Source-dependent validation runs only after CLI overrides have been applied. `rds_active` includes
+# both cfg$rds and the `--rds`/`rds=` override resolved by run_anchormap().
+validate_config_sources <- function(cfg, rds_active = FALSE) {
+  if (identical(cfg[["vif_correlation"]], "trait_rg") &&
+      is.null(cfg[["trait_rg_matrix"]]) && !isTRUE(rds_active))
+    stop("Invalid config:\n  - vif_correlation: trait_rg requires a trait_rg_matrix or an input ",
+         "supplied via --trait-rg / --rds", call. = FALSE)
   invisible(cfg)
 }
 

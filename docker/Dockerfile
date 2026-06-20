@@ -2,7 +2,7 @@
 #
 # The image IS AnchorMap: the `anchormap` R package (engine + figures) installed from source, plus
 # `anchor_map` / `plot_anchors` PATH shims, self-validating at build time. Primary run interface:
-#   docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
+#   docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.1 \
 #       anchor_map --config <your.yaml> --out-dir results --threads N
 # Figures:
 #   ... plot_anchors --config <plots.yaml> --out-dir results/figures
@@ -12,8 +12,8 @@
 # installed — the engine reads ldsc() .rds artifacts with base readRDS() and never runs ldsc()
 # (see docker/README.md). Carries the container fixes: procps / USER root / ENTRYPOINT [].
 #
-# Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.0 -f docker/Dockerfile .
-# Build (local validation, native):   docker build -t anchormap:0.1.0 -f docker/Dockerfile .
+# Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.1 -f docker/Dockerfile .
+# Build (local validation, native):   docker build -t anchormap:0.1.1 -f docker/Dockerfile .
 
 FROM rocker/r-ver:4.6.0
 
