@@ -224,6 +224,23 @@ nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.ya
 # nextflow run nextflow/main.nf -profile gcp  -params-file nextflow/params/gcp.yaml  # one-time Batch/FUSE check
 ```
 
+### Publishing a container release
+
+The [GHCR workflow](.github/workflows/publish-container.yml) builds and publishes the image whenever
+a semantic version tag such as `v0.1.0` is pushed. The tag must match `Version:` in `DESCRIPTION`; the
+workflow publishes both `ghcr.io/micpreuss/anchormap:0.1.0` and `ghcr.io/micpreuss/anchormap:latest`.
+It uses GitHub's built-in `GITHUB_TOKEN`, so no registry secret is required.
+
+```bash
+git tag -a v0.1.0 -m "AnchorMap 0.1.0"
+git push origin v0.1.0
+```
+
+After the first successful publication, open the `anchormap` package settings on GitHub and change
+its visibility to **Public**. Public GHCR images can be pulled anonymously; GitHub warns that this
+visibility change cannot be reversed. Do not move or reuse a released version tag; increment
+`DESCRIPTION` and publish a new tag for the next release.
+
 ## Validation (cross-language parity vs the Python reference)
 
 - **Positive control:** C5_sub0 anthro → **"Anthropometric [sharp]"** — `auc_abs=0.9164`,

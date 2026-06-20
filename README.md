@@ -127,56 +127,70 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
 
 AnchorMap is config-driven. Two fully-commented templates ship with the package —
 [`example_anthro.yaml`](inst/configs/example_anthro.yaml) (single-category track) and
-[`example_disease.yaml`](inst/configs/example_disease.yaml) (multi-level disease track). Copy one,
-point its `rg_long` / `ontology` / `out_dir` at your files, and run; see
-[Configuration](#configuration) for what each field means.
+[`example_disease.yaml`](inst/configs/example_disease.yaml) (multi-level disease track). There are two
+ways to use them, and you can mix them:
 
-To see a complete run first, a coherent example pair ships with the package — no editing, no external
-data (3 clusters × 9 disease traits; the `trait_category → domain` join in action). Run it from your
-cloned `AnchorMap` folder (that's where the two `inst/fixtures/...` files live); `--config
-example_disease` is a bare name that the tool resolves from its built-in configs:
+- **Copy one and edit its paths** — point `rg_long` / `ontology` / `out_dir` at your files.
+- **Keep it as-is and override the inputs on the CLI** — no YAML editing; pass `--rg-long`,
+  `--ontology` (and `--rds` / `--trait-rg`) plus `--out-dir`.
 
-```bash
-anchor_map --config example_disease \
-  --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
-  --out-dir results/example_disease --threads 4
+See [Configuration](#configuration) for what each field means.
+
+**`anchor_map` is the same command in every form** — same config, same flags, just a different wrapper:
+
+- **Installed from source** — a shim on your `PATH`: `anchor_map …`
+- **In R** — `run_anchormap()`, with the same config
+- **Under Docker** — the argument to `docker run …`. Every `anchor_map …` snippet below is also a
+  Docker command — just prepend `docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0`.
+
+### Try the shipped example
+
+A coherent example pair ships with the package — no editing, no external
+data (3 clusters × 9 disease traits; the `trait_category → domain` join in action). The two
+`inst/fixtures/...` files live in your cloned `AnchorMap` folder, so run it from there (`--config
+example_disease` is a bare name the tool resolves from its built-in configs):
+
+```r
+# R
+run_anchormap("example_disease",
+              rg_long  = "inst/fixtures/example_rg_long.tsv",
+              ontology = "inst/fixtures/example_ontology.tsv",
+              out_dir  = "results/example_disease", threads = 4)
 #> C0 -> Endocrine-metabolic [sharp] | C1 -> Circulatory [sharp] | C2 -> ambiguous
 ```
 
-Then for your own data:
+```bash
+# CLI (installed shim) — or prepend `docker run … anchor_map` per the note above
+anchor_map --config example_disease \
+  --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
+  --out-dir results/example_disease --threads 4
+```
+
+### Point it at your own data
+
+Swap the fixture paths for yours, either way:
 
 ```bash
-# config-driven (recommended): copy a template, edit the paths
+# config-driven: copy a template, edit its paths, run it
 anchor_map --config myrun.yaml --out-dir results/run1 --threads 4
 
-# or keep the template as-is and override the inputs on the CLI (no YAML editing):
-anchor_map --config example_anthro.yaml \
+# CLI override: keep the template, point it at your files (no YAML editing)
+anchor_map --config example_disease \
   --rg-long data/cluster_trait_rg.tsv --ontology data/ontology.tsv \
   --out-dir results/run1 --threads 4
 ```
 
-To grab a copy of a template (the shipped configs install alongside the package):
+To copy a template out of the installed package as a starting point:
 
 ```r
 file.copy(system.file("configs/example_disease.yaml", package = "anchormap"), "myrun.yaml")
 ```
 
-### Via Docker
+### Mounting your data under Docker
 
 The shipped configs live **inside the image**, so you refer to them by bare name (`synthetic_rds`,
-`example_disease`) — there's nothing to locate or mount. The example *pair's* data TSVs, though, are
-files in your cloned `AnchorMap` folder, so run that example from there: `-v "$PWD:/work"` mounts the
-current folder (the repo) into the container as `/work`, and `-w /work` makes it the working dir, so
-`inst/fixtures/...` resolves:
-
-```bash
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
-  anchor_map --config example_disease \
-    --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
-    --out-dir results/example_disease
-```
-
-**For your own data**, the container still can't see your files unless you *mount* their folder. The
+`example_disease`) — nothing to locate or mount. Your **own** files, though, the container still can't
+see unless you *mount* their folder. The
 `-v host:container` flag maps a folder on your computer to one inside the container — here `./data`
 (your inputs, read-only via `:ro`) becomes `/data`, and `./out` (where results land) becomes `/out`:
 
@@ -318,24 +332,6 @@ The Docker image pins R (`rocker/r-ver:4.6.0`) and every package to a single dat
 **self-validates at build time** — the build fails if the engine or the figure stack regresses.
 Use a version tag for reproducible scientific runs. GHCR also publishes `latest` as a convenient
 pointer to the newest release.
-
-### Publishing a container release
-
-The [GHCR workflow](.github/workflows/publish-container.yml) builds and publishes the image whenever
-a semantic version tag such as `v0.1.0` is pushed. The tag must match `Version:` in `DESCRIPTION`; the
-workflow publishes both `ghcr.io/micpreuss/anchormap:0.1.0` and
-`ghcr.io/micpreuss/anchormap:latest`. It uses GitHub's built-in `GITHUB_TOKEN`, so no registry secret
-is required.
-
-```bash
-git tag -a v0.1.0 -m "AnchorMap 0.1.0"
-git push origin v0.1.0
-```
-
-After the first successful publication, open the `anchormap` package settings on GitHub and change
-its visibility to **Public**. Public GHCR images can be pulled anonymously; GitHub warns that this
-visibility change cannot be reversed. Do not move or reuse a released version tag; increment
-`DESCRIPTION` and publish a new tag for the next release.
 
 ## Validation
 
