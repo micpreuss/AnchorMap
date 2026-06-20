@@ -82,6 +82,8 @@ plots_parser <- function() {
         help = "plot YAML config, or a bare shipped-config name (required)."),
       optparse::make_option("--out-dir", type = "character", default = NULL,
         help = "output directory for figures (default: out_dir from the config)."),
+      optparse::make_option("--in-dir", type = "character", default = NULL,
+        help = "read scored TSVs from this dir (by basename) instead of the config's track paths."),
       optparse::make_option("--q-sig", type = "double", default = NULL,
         help = "significance threshold for rings/masks [default 0.05]."),
       optparse::make_option("--rg-floor", type = "double", default = NULL,
@@ -107,5 +109,5 @@ cli_plot_anchors <- function(a = commandArgs(TRUE)) {
                    error = function(e) { message("error: ", conditionMessage(e)); quit(status = 2L) })
   if (isTRUE(args$help)) { cat(plots_usage()); quit(status = 0L) }
   if (is.null(args$config)) { message("error: --config is required"); cat(plots_usage()); quit(status = 2L) }
-  run_plots(args$config, args$q_sig, args$rg_floor, args$min_clusters, args$out_dir)
+  run_plots(args$config, args$q_sig, args$rg_floor, args$min_clusters, args$out_dir, args$in_dir)
 }

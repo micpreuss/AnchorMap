@@ -32,7 +32,53 @@ load_config <- function(path) {
   for (k in names(dflt)) if (is.null(cfg[[k]])) cfg[[k]] <- dflt[[k]]
   cfg[["levels"]]   <- as.character(unlist(cfg[["levels"]]))
   cfg[["z_vector"]] <- as.numeric(unlist(cfg[["z_vector"]]))
+  validate_config(cfg)
   cfg
+}
+
+# Fail-early config validation: scientific software should reject a malformed run, not silently
+# produce garbage or no scores. Checks enumerations, required ranges, and incompatible options.
+# Returns `cfg` invisibly on success; otherwise stop()s with an actionable message.
+validate_config <- function(cfg) {
+  bad <- character(0)
+  add <- function(...) bad[[length(bad) + 1L]] <<- sprintf(...)
+
+  in_unit  <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x) && x >= 0 && x <= 1
+  pos_int  <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x) && x >= 1 && x == round(x)
+  pos_num  <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x) && x > 0
+
+  if (!cfg[["vif_correlation"]] %in% c("auto", "trait_rg", "cluster_profile"))
+    add("vif_correlation must be one of {auto, trait_rg, cluster_profile}, got '%s'", cfg[["vif_correlation"]])
+  if (!cfg[["rank_variable"]] %in% c("abs_z", "abs_rg"))
+    add("rank_variable must be one of {abs_z, abs_rg}, got '%s'", cfg[["rank_variable"]])
+
+  if (!length(cfg[["levels"]]) || any(!nzchar(cfg[["levels"]])))
+    add("levels must be a non-empty list of level names")
+  else if (!cfg[["primary_level"]] %in% cfg[["levels"]])
+    add("primary_level '%s' is not in levels {%s}", cfg[["primary_level"]], paste(cfg[["levels"]], collapse = ", "))
+
+  if (!pos_int(cfg[["permutation_K"]]))  add("permutation_K must be an integer >= 1, got %s", cfg[["permutation_K"]])
+  if (!pos_int(cfg[["min_category_n"]])) add("min_category_n must be an integer >= 1, got %s", cfg[["min_category_n"]])
+  if (!pos_num(cfg[["h2_z_threshold"]])) add("h2_z_threshold must be > 0, got %s", cfg[["h2_z_threshold"]])
+  if (!in_unit(cfg[["label_auc_min"]]))  add("label_auc_min must be in [0,1], got %s", cfg[["label_auc_min"]])
+  if (!in_unit(cfg[["label_q_max"]]))    add("label_q_max must be in [0,1], got %s", cfg[["label_q_max"]])
+  if (!in_unit(cfg[["hit_abs_rg"]]))     add("hit_abs_rg must be in [0,1], got %s", cfg[["hit_abs_rg"]])
+  if (!in_unit(cfg[["vif_coverage_min"]])) add("vif_coverage_min must be in [0,1], got %s", cfg[["vif_coverage_min"]])
+  if (!(is.numeric(cfg[["vif_min_rho"]]) && length(cfg[["vif_min_rho"]]) == 1L &&
+        is.finite(cfg[["vif_min_rho"]]) && cfg[["vif_min_rho"]] >= 0))
+    add("vif_min_rho must be a finite value >= 0, got %s", cfg[["vif_min_rho"]])
+
+  if (!length(cfg[["z_vector"]]) || any(!is.finite(cfg[["z_vector"]])) || any(cfg[["z_vector"]] <= 0))
+    add("z_vector must be non-empty and all entries finite and > 0")
+
+  # Incompatible combo: explicit trait_rg redundancy needs a matrix source (the .rds route supplies one).
+  if (identical(cfg[["vif_correlation"]], "trait_rg") &&
+      is.null(cfg[["trait_rg_matrix"]]) && is.null(cfg[["rds"]]))
+    add("vif_correlation: trait_rg requires a trait_rg_matrix (or the .rds route); none configured")
+
+  if (length(bad))
+    stop("Invalid config:\n  - ", paste(bad, collapse = "\n  - "), call. = FALSE)
+  invisible(cfg)
 }
 
 # Resolve a --config argument: a real file path is used as-is; otherwise a *bare name* is looked up
@@ -88,6 +134,17 @@ read_long <- function(path) {
   cv <- toupper(as.character(df[["ldsc_converged"]])); df[["ldsc_converged"]] <- !is.na(cv) & cv == "TRUE"
   nv <- toupper(as.character(df[["negative_h2"]]));    df[["negative_h2"]]    <- !is.na(nv) & nv == "TRUE"
   df[["status"]] <- ifelse(is.na(df[["status"]]), "", as.character(df[["status"]]))
+
+  # Fail early on duplicate (cluster_label, trait_id) rows: a duplicate silently changes a cluster's
+  # N and corrupts the rank-based AUC, so reject rather than score garbage.
+  dup_key <- paste(df[["cluster_label"]], df[["trait_id"]], sep = "\r")
+  if (anyDuplicated(dup_key)) {
+    ex <- unique(dup_key[duplicated(dup_key)])
+    stop(sprintf("rg long-table %s has %d duplicate (cluster_label, trait_id) row(s), e.g. %s",
+                 path, length(ex),
+                 paste(sub("\r", "/", utils::head(ex, 5), fixed = TRUE), collapse = ", ")),
+         call. = FALSE)
+  }
   df
 }
 
@@ -98,5 +155,13 @@ read_ontology <- function(path, key) {
   data.table::setDF(ont)
   if (!(key %in% names(ont)))
     stop(sprintf("ontology %s lacks join column '%s'", path, key))
+  # Fail early on a non-unique join key: a duplicated key fans out the merge in attach_ontology
+  # (one gated trait -> many rows), silently expanding the universe.
+  if (anyDuplicated(ont[[key]])) {
+    ex <- unique(ont[[key]][duplicated(ont[[key]])])
+    stop(sprintf("ontology %s has %d duplicate '%s' key(s), e.g. %s",
+                 path, length(ex), key, paste(utils::head(ex, 5), collapse = ", ")),
+         call. = FALSE)
+  }
   ont
 }

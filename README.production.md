@@ -77,7 +77,7 @@ harness that proves the image runs under Nextflow):
    GCS-FUSE check. **Diverges from ADD §7.3 deliberately**: base `4.6.0` not `4.4.2` (match the validated
    env), Nextflow scoped to validation. See [docker/README.md](docker/README.md).
 
-The project is **under git** (GitHub: `micpreuss/AnchorMap`, private); the vendored
+The project is **under git** (GitHub: `micpreuss/AnchorMap`, public); the vendored
 `claude-science-scaffold/` subdir is gitignored (it is its own repo).
 
 ## Inputs and outputs

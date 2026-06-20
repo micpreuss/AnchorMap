@@ -10,6 +10,8 @@
 ^\.claude$
 ^\.github$
 ^inst/results$
+^CITATION\.cff$
+^CONTRIBUTING\.md$
 ^ANALYSIS_DESIGN\.md$
 ^README\.production\.md$
 ^VALIDATION\.md$

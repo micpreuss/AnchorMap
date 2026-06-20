@@ -43,9 +43,21 @@ attach_ontology <- function(g, ont, key, levels) {
   }
   if ("native" %in% levels && !("native" %in% names(g))) g[["native"]] <- g[[key]]
 
+  # Fail early if a configured level is absent from the ontology entirely (a typo / wrong file would
+  # otherwise silently produce zero scores for that level).
+  missing_levels <- setdiff(levels, names(g))
+  if (length(missing_levels))
+    stop(sprintf("ontology has no column(s) for configured level(s): %s (available: %s)",
+                 paste(missing_levels, collapse = ", "), paste(names(ont), collapse = ", ")),
+         call. = FALSE)
+
   chk <- levels[levels %in% names(g)][1]
   if (!is.na(chk)) {
     unmapped <- sort(unique(as.character(g[[key]][is.na(g[[chk]])])))
+    # Every gated key unmapped means the ontology join produced nothing usable -> reject.
+    if (length(unmapped) && length(unmapped) == length(unique(as.character(g[[key]]))))
+      stop(sprintf("no %s matched the ontology on '%s' (check ontology_key / ontology file); e.g. %s",
+                   key, chk, paste(utils::head(unmapped, 5), collapse = ", ")), call. = FALSE)
     if (length(unmapped))
       message(sprintf("WARN %d %s without ontology mapping on '%s' (e.g. %s)",
                       length(unmapped), key, chk, paste(utils::head(unmapped, 5), collapse = ", ")))

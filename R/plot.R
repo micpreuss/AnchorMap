@@ -46,13 +46,16 @@ leaf_order <- function(mat) {
 # ---- track loader ----------------------------------------------------------
 # Read a scored TSV, coerce the pandas-style "True"/"False" `eligible` to logical, keep only the
 # track's level + eligible rows, clamp coherence. Returns the per-track plotting frame + labels.
-load_track <- function(t, stage_root) {
-  s <- data.table::fread(resolve_path(stage_root, t[["scores"]]), sep = "\t",
+load_track <- function(t, stage_root, in_dir = NULL) {
+  # When in_dir is set, read the engine outputs from there (keeping each track's basename) so the
+  # figures can target any engine --out-dir; otherwise resolve the config's paths against stage_root.
+  loc <- function(p) if (!is.null(in_dir)) file.path(in_dir, basename(p)) else resolve_path(stage_root, p)
+  s <- data.table::fread(loc(t[["scores"]]), sep = "\t",
                          na.strings = c("", "NA", "NaN"), showProgress = FALSE)
   s[["eligible"]] <- toupper(as.character(s[["eligible"]])) == "TRUE"
   s <- s[s[["level"]] == t[["level"]] & s[["eligible"]], ]
   s[["coherence"]] <- pmin(pmax(fifelse(is.na(s[["coherence"]]), 1, s[["coherence"]]), 0), 1)
-  labels <- data.table::fread(resolve_path(stage_root, t[["labels"]]), sep = "\t",
+  labels <- data.table::fread(loc(t[["labels"]]), sep = "\t",
                               na.strings = c("", "NA"), showProgress = FALSE)
   list(name = t[["name"]], level = t[["level"]], s = s, labels = labels)
 }
@@ -351,10 +354,13 @@ save_fig <- function(plot, png_path, width, height, pdf = TRUE) {
 #' @param config_path Path to a plot YAML config (or a bare shipped-config name).
 #' @param q_sig,rg_floor,min_clusters Optional overrides of the significance gate.
 #' @param out_dir Optional output-directory override (else `cfg$out_dir`).
+#' @param in_dir Optional input-directory override: read each track's `scores`/`labels` from this
+#'   directory (by basename) instead of the config's paths, so figures can target any engine
+#'   `--out-dir`.
 #' @return Invisibly, the character vector of written file paths.
 #' @export
 run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters = NULL,
-                      out_dir = NULL) {
+                      out_dir = NULL, in_dir = NULL) {
   options(bitmapType = "cairo")
   config_path <- resolve_config_path(config_path)
   cfg   <- yaml::read_yaml(config_path)
@@ -371,7 +377,8 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
   written <- character(0)
   emit <- function(p) { message(sprintf("[write] %s", p)); written[[length(written) + 1L]] <<- p }
 
-  tracks <- lapply(cfg[["tracks"]], load_track, stage_root = sroot)
+  in_dir <- if (!is.null(in_dir)) .abs_cwd(in_dir) else NULL
+  tracks <- lapply(cfg[["tracks"]], load_track, stage_root = sroot, in_dir = in_dir)
   row_order <- natural_order(unlist(lapply(tracks, function(tr) tr[["s"]][["cluster_label"]])))
 
   # 1. lollipops (per track)

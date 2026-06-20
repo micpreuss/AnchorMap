@@ -229,17 +229,19 @@ configs live in the gitignored `local/configs/`.
 # Install the package (host):
 R CMD INSTALL .            # or: remotes::install_github("micpreuss/AnchorMap")
 
-# Engine (host, after install) — bare config name resolves to inst/configs, or pass a YAML path:
-anchor_map --config synthetic_rds --out-dir results/synthetic_rds --threads 4
-#  (without the PATH shim:  Rscript inst/scripts/anchor_map.R --config synthetic_rds --out-dir ... )
-#  your real runs:  anchor_map --config local/configs/carey_rint15_anthro.yaml --out-dir results/...
+# Engine (host, after install) — bare config name resolves to inst/configs, or pass a YAML path.
+# A source install does NOT put `anchor_map`/`plot_anchors` on PATH (those shims are Docker-only);
+# on the host run the bundled script:
+Rscript inst/scripts/anchor_map.R --config synthetic_rds --out-dir results/synthetic_rds --threads 4
+#  your real runs:  Rscript inst/scripts/anchor_map.R --config local/configs/carey_rint15_anthro.yaml --out-dir results/...
 
 # Engine — via the pinned image (THE primary, reproducible run interface; mount cwd as /work):
 docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.0 \
   anchor_map --config synthetic_rds --out-dir results/synthetic_rds --threads 4
 
-# Figures (reads the scored TSVs the engine wrote; PNG+PDF into the --out-dir):
-plot_anchors --config synthetic_rds_plots --out-dir results/synthetic_rds/figures
+# Figures (reads the scored TSVs the engine wrote; PNG+PDF into the --out-dir).
+# --in-dir reads the scored TSVs from a given engine out-dir (by basename) when it differs:
+Rscript inst/scripts/plot_anchors.R --config synthetic_rds_plots --in-dir results/synthetic_rds --out-dir results/synthetic_rds/figures
 
 # Tests (testthat; load_all harness so internals are visible):
 Rscript -e 'testthat::test_local()'

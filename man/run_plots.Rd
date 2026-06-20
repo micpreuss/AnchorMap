@@ -9,7 +9,8 @@ run_plots(
   q_sig = NULL,
   rg_floor = NULL,
   min_clusters = NULL,
-  out_dir = NULL
+  out_dir = NULL,
+  in_dir = NULL
 )
 }
 \arguments{
@@ -18,6 +19,10 @@ run_plots(
 \item{q_sig, rg_floor, min_clusters}{Optional overrides of the significance gate.}
 
 \item{out_dir}{Optional output-directory override (else \code{cfg$out_dir}).}
+
+\item{in_dir}{Optional input-directory override: read each track's \code{scores}/\code{labels} from this
+directory (by basename) instead of the config's paths, so figures can target any engine
+\code{--out-dir}.}
 }
 \value{
 Invisibly, the character vector of written file paths.

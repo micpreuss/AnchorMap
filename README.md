@@ -107,8 +107,8 @@ library(anchormap)
 # score each cluster's anchoring (also runs the reliability z-sweep)
 run_anchormap("synthetic_rds", out_dir = "results/demo", threads = 2)
 
-# render the figures
-run_plots("synthetic_rds_plots", out_dir = "results/demo/figures")
+# render the figures (in_dir points the plotter at the engine's out-dir)
+run_plots("synthetic_rds_plots", in_dir = "results/demo", out_dir = "results/demo/figures")
 ```
 
 ### Docker
@@ -118,9 +118,9 @@ run_plots("synthetic_rds_plots", out_dir = "results/demo/figures")
 docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
   anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 
-# render the figures
+# render the figures (--in-dir points the plotter at the engine's out-dir)
 docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0 \
-  plot_anchors --config synthetic_rds_plots --out-dir results/demo/figures
+  plot_anchors --config synthetic_rds_plots --in-dir results/demo --out-dir results/demo/figures
 ```
 
 ## Running on your own data
@@ -138,7 +138,8 @@ See [Configuration](#configuration) for what each field means.
 
 **`anchor_map` is the same command in every form** — same config, same flags, just a different wrapper:
 
-- **Installed from source** — a shim on your `PATH`: `anchor_map …`
+- **Installed from source** — run the bundled script: `Rscript inst/scripts/anchor_map.R …` (a bare
+  `anchor_map` shim on your `PATH` is provided **only inside the Docker image**, not by a source install)
 - **In R** — `run_anchormap()`, with the same config
 - **Under Docker** — the argument to `docker run …`. Every `anchor_map …` snippet below is also a
   Docker command — just prepend `docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.0`.
@@ -160,7 +161,7 @@ run_anchormap("example_disease",
 ```
 
 ```bash
-# CLI (installed shim) — or prepend `docker run … anchor_map` per the note above
+# CLI: Docker shim `anchor_map …` (per the note above), or from source `Rscript inst/scripts/anchor_map.R …`
 anchor_map --config example_disease \
   --rg-long inst/fixtures/example_rg_long.tsv --ontology inst/fixtures/example_ontology.tsv \
   --out-dir results/example_disease --threads 4
@@ -217,7 +218,8 @@ plot_anchors --help
 
 Key flags: `--config` (a YAML path **or** a bare shipped-config name); input overrides `--rds`,
 `--rg-long`, `--trait-rg`, `--ontology`; output control `--out-dir`, `--run-label`; engine
-`--threads`, `--z-vector`.
+`--threads`, `--z-vector`. For `plot_anchors`, `--in-dir` reads the scored TSVs from a given engine
+out-dir (by basename) instead of the config's track paths.
 
 ## Inputs
 
@@ -351,4 +353,4 @@ analytic test suite (`testthat`). See [VALIDATION.md](VALIDATION.md).
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md).
+MIT — see [LICENSE](LICENSE).
