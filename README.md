@@ -270,7 +270,7 @@ the table below is the reference. Any field can be overridden on the CLI (e.g. `
 | --- | --- | --- |
 | **Inputs** | `run_label` | name for this run (used in log lines / output labelling) |
 | | `rg_long` | path to the cluster × trait `rg` long-table (TSV route) |
-| | `trait_rg_matrix` | *(optional)* path to the trait × trait LDSC `--rg` summary (redundancy source) |
+| | `trait_rg_matrix` | *(optional, recommended)* path to the trait × trait LDSC `--rg` summary — the within-category redundancy source † |
 | | `rds` | *(optional)* path to a GenomicSEM `ldsc()` `.rds` (`.rds` route; replaces `rg_long`) |
 | | `ontology` | path to the ontology TSV |
 | | `out_dir` | where TSVs, the log, and `figures/` are written |
@@ -296,6 +296,17 @@ the table below is the reference. Any field can be overridden on the CLI (e.g. `
 | **Anchor shape** | `shape_margin_sharp` | AUC margin (top vs next) above which the anchor is *sharp* |
 | | `shape_margin_diffuse` | margin below which it is *diffuse* |
 | | `shape_focus_diffuse` | spread of significant domains above which it is *diffuse* |
+
+† **`trait_rg_matrix` is optional but recommended.** It is the *measured* within-category redundancy
+source. Without it, `vif_correlation: auto` falls back in order: first to a cluster-profile **proxy**
+(the Pearson *profile correlation* of traits' `rg` across clusters, used when ≥3 clusters are
+available), and only if that is unavailable to an uncorrected `VIF = 1`. The proxy is an indirect,
+noisier stand-in that may not capture the full redundancy; `VIF = 1` assumes independence outright
+(the optimistic extreme, reached only when a run has fewer than 3 clusters). In either case the
+variance-inflation correction can fall short of what the measured matrix would give, leaving the
+confidence intervals and `vif_p` anti-conservative (significance overstated). This touches only
+`vif` / `vif_p` / CI width, never the AUC, ranks, `pooled_rg`, or coherence, so the measured matrix
+is the reliable choice.
 
 The **figures** config is separate ([`example_plots.yaml`](inst/configs/example_plots.yaml)): it lists
 one or more `tracks` (each a `name`, `level`, and the `scores`/`labels` TSVs the engine wrote) plus
