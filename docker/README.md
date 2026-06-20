@@ -3,8 +3,8 @@
 ## Overview
 
 **Purpose:** Ships the validated AnchorMap R engine (Phases 1–4: gate → redundancy → score → label →
-sensitivity z-sweep → ggplot2 figures) as a single pinned, reproducible container. **This image *is*
-the tool** — the primary way to run AnchorMap:
+sensitivity z-sweep → ggplot2 figures) as a single pinned, version-constrained container. **This image
+*is* the tool** — the primary way to run AnchorMap:
 
 The image installs the `anchormap` R package and puts `anchor_map` / `plot_anchors` shims on `PATH`:
 
@@ -34,12 +34,18 @@ contract: no exit-126, GCS-FUSE write perms, working `ps`/trace). See [`nextflow
   skew and lets a single snapshot reproduce the validated `future.apply`/`ggplot2` versions.
   Debian/Ubuntu-based ⇒ `procps`/`ps` available for Nextflow trace.
 - **CRAN via one dated Posit P3M snapshot** (`--build-arg P3M_SNAPSHOT=YYYY-MM-DD`, default `2026-06-01`) —
-  every package resolves to the version current at that date, so rebuilds are byte-reproducible. On the
-  4.6.0 base this yields the validated `future.apply 1.20.x` and `ggplot2 4.0.x` from a single snapshot
-  (no split pin). The codename is detected from the base image's `/etc/os-release` so the binary URL is
-  always correct; the verify step prints the resolved versions.
-- Version tags such as `0.1.1` are the reproducible run interface; GHCR also carries `latest` as a
-  convenient pointer to the newest release.
+  every CRAN package (including the bootstrap `remotes`, installed after the snapshot repo is wired in)
+  resolves to the version current at that date. On the 4.6.0 base this yields the validated
+  `future.apply 1.20.x` and `ggplot2 4.0.x` from a single snapshot (no split pin). The codename is
+  detected from the base image's `/etc/os-release` so the binary URL is always correct; the verify step
+  prints the resolved versions.
+- **Reproducibility scope.** R and every CRAN package are *version-pinned* (base tag + snapshot date), so
+  the R layer is deterministic. The base **tag** and its apt packages are not digest-pinned by default,
+  so the OS layer can drift as rocker rebuilds `4.6.0` upstream. For a fully byte-reproducible release,
+  pin the resolved base digest: `--build-arg BASE_IMAGE=rocker/r-ver:4.6.0@sha256:<digest>` (resolve it
+  once with `docker buildx imagetools inspect rocker/r-ver:4.6.0`).
+- Version tags such as `0.1.1` are the run interface; GHCR also carries `latest` as a convenient pointer
+  to the newest release.
 
 ## Container fixes (carried from the parent)
 

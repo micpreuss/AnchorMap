@@ -49,7 +49,17 @@ parse_engine_args <- function(a) {
   o <- optparse::parse_args(engine_parser(), args = a,
                             convert_hyphens_to_underscores = TRUE,
                             print_help_and_exit = FALSE)
-  if (!is.null(o$z_vector)) o$z_vector <- as.numeric(strsplit(o$z_vector, "[, ]+")[[1]])
+  if (!is.null(o$z_vector)) {
+    raw <- strsplit(o$z_vector, "[, ]+")[[1]]
+    raw <- raw[nzchar(raw)]
+    zv  <- suppressWarnings(as.numeric(raw))
+    # Reject silently-dropped garbage: as.numeric("nope") -> NA would otherwise vanish at the later
+    # sort/unique and fall back to the primary threshold without a word.
+    if (!length(zv) || anyNA(zv) || any(!is.finite(zv)) || any(zv <= 0))
+      stop(sprintf("--z-vector must be a comma-separated list of finite positive numbers, got '%s'",
+                   o$z_vector), call. = FALSE)
+    o$z_vector <- zv
+  }
   o
 }
 

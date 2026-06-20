@@ -349,21 +349,23 @@ fig_diagonal <- function(spec, row_order, name, cap = 2.5) {
 }
 
 # Write a ggplot/patchwork object to PNG (+ PDF unless pdf=FALSE). Headless: ragg if present,
-# else cairo. Returns the PNG path. The deliberate axis crops (lollipop xlim 0.5-1.0, scatter
-# 0.45-1.0) drop depleted off-axis points exactly as the reference matplotlib set_xlim does - that
-# "removed N rows outside the scale range" message is intended, so it is muffled here.
+# else cairo. Returns every written path (PNG, and PDF unless pdf=FALSE) so callers can record the
+# full artifact set. The deliberate axis crops (lollipop xlim 0.5-1.0, scatter 0.45-1.0) drop
+# depleted off-axis points exactly as the reference matplotlib set_xlim does - that "removed N rows
+# outside the scale range" message is intended, so it is muffled here.
 save_fig <- function(plot, png_path, width, height, pdf = TRUE) {
   png_dev <- if (requireNamespace("ragg", quietly = TRUE)) ragg::agg_png else
     function(filename, width, height, units, res, ...) grDevices::png(
       filename = filename, width = width, height = height, units = units, res = res, type = "cairo")
+  pdf_path <- sub("\\.png$", ".pdf", png_path)
   suppressWarnings({
     ggplot2::ggsave(png_path, plot, device = png_dev, width = width, height = height,
                     units = "in", dpi = 200, limitsize = FALSE)
     if (pdf)
-      ggplot2::ggsave(sub("\\.png$", ".pdf", png_path), plot, device = grDevices::cairo_pdf,
+      ggplot2::ggsave(pdf_path, plot, device = grDevices::cairo_pdf,
                       width = width, height = height, units = "in", limitsize = FALSE)
   })
-  png_path
+  if (pdf) c(png_path, pdf_path) else png_path
 }
 
 # ---- driver ----------------------------------------------------------------
@@ -407,7 +409,7 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
   out_dir <- if (!is.null(out_dir)) .abs_cwd(out_dir) else resolve_path(sroot, cfg[["out_dir"]])
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   written <- character(0)
-  emit <- function(p) { message(sprintf("[write] %s", p)); written[[length(written) + 1L]] <<- p }
+  emit <- function(p) { for (q in p) message(sprintf("[write] %s", q)); written <<- c(written, p) }
 
   tracks <- lapply(cfg[["tracks"]], load_track, stage_root = sroot, in_dir = in_dir)
   row_order <- natural_order(unlist(lapply(tracks, function(tr) tr[["s"]][["cluster_label"]])))
@@ -419,19 +421,19 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
     nrw  <- ceiling(n_cl / max(nc, 1))
     p <- fig_lollipops(tr, row_order, cfg)
     png <- file.path(out_dir, sprintf("anchor_lollipops_%s.png", tr[["name"]]))
-    save_fig(p, png, width = nc * 3.6 + 1.5, height = nrw * 2.3 + 0.6); emit(png)
+    emit(save_fig(p, png, width = nc * 3.6 + 1.5, height = nrw * 2.3 + 0.6))
   }
 
   # 2. dot-heatmap (combined)
   totcats <- sum(vapply(tracks, function(tr) length(unique(tr[["s"]][["category"]])), integer(1)))
   png <- file.path(out_dir, "anchor_dotheatmap.png")
-  save_fig(fig_dotheatmap(tracks, row_order, cfg), png,
-           width = totcats * 0.34 + 3.5, height = length(row_order) * 0.34 + 2.2); emit(png)
+  emit(save_fig(fig_dotheatmap(tracks, row_order, cfg), png,
+                width = totcats * 0.34 + 3.5, height = length(row_order) * 0.34 + 2.2))
 
   # 3. AUC-vs-coherence scatter (combined)
   if (isTRUE(cfg[["scatter"]])) {
     png <- file.path(out_dir, "anchor_auc_coherence.png")
-    save_fig(fig_scatter(tracks, cfg), png, width = length(tracks) * 4.6, height = 4.4); emit(png)
+    emit(save_fig(fig_scatter(tracks, cfg), png, width = length(tracks) * 4.6, height = 4.4))
   }
 
   # 4-5. specificity heatmap + diagonal (per track) + distinctive table
@@ -441,8 +443,8 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
     ro   <- natural_order(rownames(spec[["M"]]))
     ncat <- ncol(spec[["Z"]])
     png  <- file.path(out_dir, sprintf("anchor_specificity_%s.png", tr[["name"]]))
-    save_fig(fig_specificity(spec, ro, tr[["name"]]), png,
-             width = ncat * 0.42 + 3.5, height = length(ro) * 0.34 + 2.0); emit(png)
+    emit(save_fig(fig_specificity(spec, ro, tr[["name"]]), png,
+                  width = ncat * 0.42 + 3.5, height = length(ro) * 0.34 + 2.0))
     pd <- fig_diagonal(spec, ro, tr[["name"]])
     if (is.null(pd)) {
       message(sprintf("[skip] anchor_specificity_diagonal_%s - no significant distinctive cells",
@@ -450,7 +452,7 @@ run_plots <- function(config_path, q_sig = NULL, rg_floor = NULL, min_clusters =
     } else {
       ncols <- length(diagonal_column_order(.boxed(spec, ro), ro))
       png <- file.path(out_dir, sprintf("anchor_specificity_diagonal_%s.png", tr[["name"]]))
-      save_fig(pd, png, width = ncols * 0.6 + 3.5, height = length(ro) * 0.34 + 2.0); emit(png)
+      emit(save_fig(pd, png, width = ncols * 0.6 + 3.5, height = length(ro) * 0.34 + 2.0))
     }
     dist_all[[length(dist_all) + 1L]] <- distinctive_table(spec, tr[["name"]])
   }

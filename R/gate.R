@@ -30,11 +30,21 @@ apply_universe_gate <- function(df, cfg, z = NULL) {
   g
 }
 
-# Join the ontology onto gated rows on `key`; never clobber existing columns; coerce
-# anchor_eligible (missing -> FALSE, mirroring the unmapped-row behaviour); alias the `native` level.
+# Join the ontology onto gated rows on `key`; the ontology (Input D) is AUTHORITATIVE for the
+# anchoring columns it carries (domain / anchor_eligible / icd_chapter / ...); coerce anchor_eligible
+# (missing -> FALSE, mirroring the unmapped-row behaviour); alias the `native` level.
 attach_ontology <- function(g, ont, key, levels) {
-  bring <- names(ont)[names(ont) == key | !(names(ont) %in% names(g))]
-  g <- merge(g, ont[, bring, drop = FALSE], by = key, all.x = TRUE, sort = FALSE)
+  # The ontology defines the anchoring semantics, so it MUST win over any same-named column the rg
+  # table happens to carry: a stale `domain`/`anchor_eligible` in the input once silently overrode the
+  # curated ontology and produced scientifically wrong labels. Drop the colliding (non-key) input
+  # columns so the ontology overrides, and say so loudly.
+  collide <- setdiff(intersect(names(g), names(ont)), key)
+  if (length(collide)) {
+    message(sprintf("WARN ontology overrides %d column(s) also present in the rg table: %s",
+                    length(collide), paste(collide, collapse = ", ")))
+    g <- g[, setdiff(names(g), collide), drop = FALSE]
+  }
+  g <- merge(g, ont, by = key, all.x = TRUE, sort = FALSE)
   if ("anchor_eligible" %in% names(g)) {
     ae <- toupper(as.character(g[["anchor_eligible"]]))
     g[["anchor_eligible"]] <- !is.na(ae) & ae == "TRUE"

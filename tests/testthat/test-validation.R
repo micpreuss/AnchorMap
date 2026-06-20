@@ -120,6 +120,21 @@ test_that("attach_ontology errors when nothing matches the ontology", {
   expect_error(attach_ontology(g, ont, "trait_id", c("anthro_class")), "matched the ontology")
 })
 
+test_that("attach_ontology: the ontology overrides stale columns carried in the rg table", {
+  # An adversarial rg table carries its own (stale) domain columns that contradict the curated
+  # ontology; the ontology must win and the override must be announced, not silent.
+  g <- data.frame(trait_id = c("T1", "T2"), cluster_label = "C0",
+                  anthro_class = c("WRONG", "WRONG"), anchor_eligible = c("FALSE", "FALSE"),
+                  stringsAsFactors = FALSE)
+  ont <- data.frame(trait_id = c("T1", "T2"), anthro_class = c("size", "length"),
+                    anchor_eligible = c("TRUE", "TRUE"), stringsAsFactors = FALSE)
+  expect_message(out <- attach_ontology(g, ont, "trait_id", c("anthro_class")),
+                 "ontology overrides")
+  expect_setequal(out[["anthro_class"]], c("size", "length"))   # ontology values, not "WRONG"
+  expect_true(all(out[["anchor_eligible"]]))                    # ontology TRUE, not the stale FALSE
+  expect_false(any(out[["anthro_class"]] == "WRONG"))
+})
+
 # ---- plot input validation --------------------------------------------------
 
 .write_plot_fixture <- function(dir) {

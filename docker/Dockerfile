@@ -1,4 +1,4 @@
-# AnchorMap — pinned, reproducible image (THE tool).
+# AnchorMap — pinned, version-constrained image (THE tool).
 #
 # The image IS AnchorMap: the `anchormap` R package (engine + figures) installed from source, plus
 # `anchor_map` / `plot_anchors` PATH shims, self-validating at build time. Primary run interface:
@@ -8,14 +8,22 @@
 #   ... plot_anchors --config <plots.yaml> --out-dir results/figures
 #
 # Pinning: rocker/r-ver:4.6.0 (= the host R 4.6.0 the engine was validated on) + a single dated Posit
-# P3M CRAN snapshot, so R and every dependency match the validated versions. GenomicSEM is NOT
-# installed — the engine reads ldsc() .rds artifacts with base readRDS() and never runs ldsc()
-# (see docker/README.md). Carries the container fixes: procps / USER root / ENTRYPOINT [].
+# P3M CRAN snapshot, so R and every CRAN dependency (incl. the bootstrap `remotes`, installed AFTER the
+# snapshot repo is wired in below) resolve to fixed, validated versions. GenomicSEM is NOT installed —
+# the engine reads ldsc() .rds artifacts with base readRDS() and never runs ldsc() (see docker/README.md).
+# Carries the container fixes: procps / USER root / ENTRYPOINT [].
+#
+# Reproducibility scope: R + every CRAN package are version-pinned (base tag + snapshot date). The base
+# tag and its apt packages are NOT digest-pinned by default, so they can drift as rocker rebuilds the
+# tag. For a fully byte-reproducible release, pass the resolved base digest:
+#   docker build --build-arg BASE_IMAGE=rocker/r-ver:4.6.0@sha256:<digest> -t anchormap:0.1.1 -f docker/Dockerfile .
+# (resolve it once with `docker buildx imagetools inspect rocker/r-ver:4.6.0`).
 #
 # Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.1 -f docker/Dockerfile .
 # Build (local validation, native):   docker build -t anchormap:0.1.1 -f docker/Dockerfile .
 
-FROM rocker/r-ver:4.6.0
+ARG BASE_IMAGE=rocker/r-ver:4.6.0
+FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.title="AnchorMap" \
       org.opencontainers.image.description="Correlation-aware ontology anchoring for latent genetic cluster factors" \
@@ -47,6 +55,8 @@ RUN CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")" && \
 # NO GenomicSEM (the engine reads ldsc() .rds with base readRDS, never runs ldsc()).
 # `remotes::install_deps(dependencies = TRUE)` pulls Imports (incl. optparse for the CLI) +
 # Suggests (poolr cross-check, ragg figure backend) against the pinned snapshot; then R CMD INSTALL.
+# `install.packages('remotes')` itself resolves from the same snapshot (the snapshot repo was wired
+# into Rprofile.site above), so the bootstrap is version-pinned too.
 WORKDIR /src
 COPY DESCRIPTION NAMESPACE LICENSE ./
 COPY R/ ./R/

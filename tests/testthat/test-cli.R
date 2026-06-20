@@ -23,6 +23,15 @@ test_that("engine parser handles --help / -h and unknown flags", {
   expect_error(suppressWarnings(parse_engine_args("--config")))
 })
 
+test_that("engine parser rejects invalid --z-vector instead of silently dropping it", {
+  expect_error(parse_engine_args(c("--config", "x.yaml", "--z-vector", "nope")), "finite positive")
+  expect_error(parse_engine_args(c("--config", "x.yaml", "--z-vector", "3,-1")), "finite positive")
+  expect_error(parse_engine_args(c("--config", "x.yaml", "--z-vector", "0")),    "finite positive")
+  expect_error(parse_engine_args(c("--config", "x.yaml", "--z-vector", "")),     "finite positive")
+  expect_equal(parse_engine_args(c("--config", "x.yaml", "--z-vector", "3, 4,5"))$z_vector,
+               c(3, 4, 5))   # valid still parses (mixed comma/space)
+})
+
 test_that("plots parser captures overrides + help + unknown flags", {
   a <- parse_plots_args(c("--config", "p.yaml", "--out-dir", "fig", "--q-sig", "0.01",
                           "--rg-floor", "0.2", "--min-clusters", "3"))

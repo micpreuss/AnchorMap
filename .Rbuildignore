@@ -1,3 +1,4 @@
+^LICENSE\.md$
 ^docker$
 ^nextflow$
 ^validation$
