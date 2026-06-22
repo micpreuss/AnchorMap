@@ -11,12 +11,12 @@ The image installs the `anchormap` R package and puts `anchor_map` / `plot_ancho
 ```bash
 # engine (rg long-TSV or GenomicSEM .rds route, per your config)
 docker run --rm -v "$PWD:/work" -w /work \
-    ghcr.io/micpreuss/anchormap:0.1.1 \
+    ghcr.io/micpreuss/anchormap:0.1.2 \
     anchor_map --config configs/your_run.yaml --out-dir results/your_run --threads 4
 
 # figures (reads the scored TSVs the engine wrote)
 docker run --rm -v "$PWD:/work" -w /work \
-    ghcr.io/micpreuss/anchormap:0.1.1 \
+    ghcr.io/micpreuss/anchormap:0.1.2 \
     plot_anchors --config configs/your_run_plots.yaml --out-dir results/your_run/figures
 ```
 
@@ -44,7 +44,7 @@ contract: no exit-126, GCS-FUSE write perms, working `ps`/trace). See [`nextflow
   so the OS layer can drift as rocker rebuilds `4.6.0` upstream. For a fully byte-reproducible release,
   pin the resolved base digest: `--build-arg BASE_IMAGE=rocker/r-ver:4.6.0@sha256:<digest>` (resolve it
   once with `docker buildx imagetools inspect rocker/r-ver:4.6.0`).
-- Version tags such as `0.1.1` are the run interface; GHCR also carries `latest` as a convenient pointer
+- Version tags such as `0.1.2` are the run interface; GHCR also carries `latest` as a convenient pointer
   to the newest release.
 
 ## Container fixes (carried from the parent)
@@ -99,12 +99,12 @@ Tagged releases are published automatically to GitHub Container Registry by
 package version in `DESCRIPTION`:
 
 ```bash
-git tag -a v0.1.1 -m "AnchorMap 0.1.1"
-git push origin v0.1.1
+git tag -a v0.1.2 -m "AnchorMap 0.1.2"
+git push origin v0.1.2
 ```
 
 The workflow builds `linux/amd64`, runs both Dockerfile self-tests, and publishes
-`ghcr.io/micpreuss/anchormap:0.1.1` and `ghcr.io/micpreuss/anchormap:latest`. GitHub Actions uses its
+`ghcr.io/micpreuss/anchormap:0.1.2` and `ghcr.io/micpreuss/anchormap:latest`. GitHub Actions uses its
 built-in `GITHUB_TOKEN`; no PAT or repository secret is needed. After the package is published for
 the first time, set its visibility to **Public** in the package settings so it can be pulled without
 authentication. GitHub warns that making a package public cannot be reversed.
@@ -120,11 +120,11 @@ unset GHCR_TOKEN
 
 # Build for the release platform from the repository root.
 docker build --platform linux/amd64 \
-    -t ghcr.io/micpreuss/anchormap:0.1.1 \
+    -t ghcr.io/micpreuss/anchormap:0.1.2 \
     -f docker/Dockerfile .
 
-docker push ghcr.io/micpreuss/anchormap:0.1.1
+docker push ghcr.io/micpreuss/anchormap:0.1.2
 ```
 
-Bump the tag (never reuse `0.1.1`) when the engine or a pinned dependency changes; update the tag in
+Bump the tag (never reuse `0.1.2`) when the engine or a pinned dependency changes; update the tag in
 [`nextflow/params/gcp.yaml`](../nextflow/params/gcp.yaml) and any consuming configs.

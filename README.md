@@ -82,18 +82,18 @@ The only thing you install is [Docker Desktop](https://www.docker.com/products/d
 public image from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/micpreuss/anchormap:0.1.1
+docker pull ghcr.io/micpreuss/anchormap:0.1.2
 ```
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.1 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.2 \
   anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 #> ... C5_sub0 -> anthro [sharp] ...      (results written to ./results/demo)
 ```
 
 Then point it at your own inputs — see [Running on your own data](#running-on-your-own-data) below.
 To build and validate the image from source instead, clone the repository and run
-`docker build -t anchormap:0.1.1 -f docker/Dockerfile .` from its root.
+`docker build -t anchormap:0.1.2 -f docker/Dockerfile .` from its root.
 
 ## Quick start
 
@@ -115,11 +115,11 @@ run_plots("synthetic_rds_plots", in_dir = "results/demo", out_dir = "results/dem
 
 ```bash
 # score each cluster's anchoring (also runs the reliability z-sweep)
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.1 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.2 \
   anchor_map --config synthetic_rds --out-dir results/demo --threads 2
 
 # render the figures (--in-dir points the plotter at the engine's out-dir)
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.1 \
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.2 \
   plot_anchors --config synthetic_rds_plots --in-dir results/demo --out-dir results/demo/figures
 ```
 
@@ -142,7 +142,7 @@ See [Configuration](#configuration) for what each field means.
   `anchor_map` shim on your `PATH` is provided **only inside the Docker image**, not by a source install)
 - **In R** — `run_anchormap()`, with the same config
 - **Under Docker** — the argument to `docker run …`. Every `anchor_map …` snippet below is also a
-  Docker command — just prepend `docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.1`.
+  Docker command — just prepend `docker run --rm -v "$PWD:/work" -w /work ghcr.io/micpreuss/anchormap:0.1.2`.
 
 ### Try the shipped example
 
@@ -198,7 +198,7 @@ see unless you *mount* their folder. The
 ```bash
 docker run --rm \
   -v "$PWD/data:/data:ro" -v "$PWD/out:/out" \
-  ghcr.io/micpreuss/anchormap:0.1.1 \
+  ghcr.io/micpreuss/anchormap:0.1.2 \
   anchor_map --config /data/myrun.yaml --out-dir /out --threads 4
 ```
 

@@ -1,6 +1,6 @@
 Package: anchormap
 Title: Competitive, Size- and Correlation-Aware Cluster Anchoring
-Version: 0.1.1
+Version: 0.1.2
 Authors@R:
     person("Michael", "Preuss", email = "preuss_micha@icloud.com", role = c("aut", "cre"))
 Description: Given latent cluster factors and their genetic correlations

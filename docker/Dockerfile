@@ -2,7 +2,7 @@
 #
 # The image IS AnchorMap: the `anchormap` R package (engine + figures) installed from source, plus
 # `anchor_map` / `plot_anchors` PATH shims, self-validating at build time. Primary run interface:
-#   docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.1 \
+#   docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.2 \
 #       anchor_map --config <your.yaml> --out-dir results --threads N
 # Figures:
 #   ... plot_anchors --config <plots.yaml> --out-dir results/figures
@@ -16,11 +16,11 @@
 # Reproducibility scope: R + every CRAN package are version-pinned (base tag + snapshot date). The base
 # tag and its apt packages are NOT digest-pinned by default, so they can drift as rocker rebuilds the
 # tag. For a fully byte-reproducible release, pass the resolved base digest:
-#   docker build --build-arg BASE_IMAGE=rocker/r-ver:4.6.0@sha256:<digest> -t anchormap:0.1.1 -f docker/Dockerfile .
+#   docker build --build-arg BASE_IMAGE=rocker/r-ver:4.6.0@sha256:<digest> -t anchormap:0.1.2 -f docker/Dockerfile .
 # (resolve it once with `docker buildx imagetools inspect rocker/r-ver:4.6.0`).
 #
-# Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.1 -f docker/Dockerfile .
-# Build (local validation, native):   docker build -t anchormap:0.1.1 -f docker/Dockerfile .
+# Build (release, for Google Batch):  docker build --platform linux/amd64 -t anchormap:0.1.2 -f docker/Dockerfile .
+# Build (local validation, native):   docker build -t anchormap:0.1.2 -f docker/Dockerfile .
 
 ARG BASE_IMAGE=rocker/r-ver:4.6.0
 FROM ${BASE_IMAGE}

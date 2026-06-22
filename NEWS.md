@@ -1,3 +1,11 @@
+# anchormap 0.1.2
+
+- Made ontology input authoritative when same-named columns are also present in the correlation table,
+  preventing stale domain or eligibility annotations from being retained.
+- Hardened `--z-vector` validation to reject empty, non-finite, and non-positive values.
+- Included both PNG and PDF outputs in the plotting return value and figure count.
+- Corrected the R package MIT license layout and clarified the Docker image reproducibility scope.
+
 # anchormap 0.1.1
 
 - Added push/pull-request CI for the test suite and end-to-end engine/figure smoke tests, plus a
