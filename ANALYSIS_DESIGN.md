@@ -446,6 +446,40 @@ Goal: shippable, reproducible container + process.
 Deliverables: ✅ pinned `Dockerfile` (procps, USER root, ENTRYPOINT [], P3M snapshot, smoke test); ✅ DSL2 `ANCHORMAP` process + `nextflow.config`; ✅ log with `FINISHED`.
 Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture produces all outputs (primary + sensitivity TSVs, figures, log).
 
+**Phase 6 — AUC confidence intervals + shape confidence. 📋 PLANNED.**
+Goal: attach **uncertainty** to the two point estimates that drive every call — the competitive AUC and
+the inverse-Simpson `anchor_focus` that decides `anchor_shape`. Purely additive (appended columns;
+**no existing value changes**); plan in [.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md](.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md).
+
+- **Part A — AUC CI (deterministic).** Per-AUC 95% CI via the **DeLong (1988)** nonparametric variance
+  computed from the placement values already implicit in the midranks (Sun & Xu 2014 fast form), **VIF-
+  inflated** (`Var_adj = vif·Var_DeLong`, consistent with the existing `vif_z = z/√vif`) for the within-
+  category trait correlation, and **logit-transformed** to stay in [0,1]. **Hanley–McNeil (1982)**
+  variance is the strictly-positive fallback for the perfect-separation / degenerate-group case where
+  DeLong's variance collapses to 0. Crux: the existing `var0 = (N+1)/(12·n_in·n_out)` is the **null**
+  (H₀: AUC=0.5) variance for the `vif_p` test — the CI needs the **alternative**-hypothesis (DeLong)
+  variance. New score columns: `auc_abs_se`, `auc_abs_ci_lo`, `auc_abs_ci_hi`.
+- **Part B — shape confidence (Monte-Carlo).** Propagate the Part-A per-AUC distributions (logit-normal,
+  VIF-inflated SE) through the **entire** `anchor_shape` ruleset `B` times; report `shape_confidence` =
+  fraction of draws recovering the point shape (a Felsenstein-style bootstrap support / posterior over
+  {weak,sharp,focal,diffuse} in `shape_posterior`), plus `anchor_focus_ci_lo/hi`. MC is needed (not a
+  closed-form `focus` CI) because the verdict crosses the `n_sig`/`margin`/`focus` thresholds
+  simultaneously. A deterministic **leave-one-domain-out jackknife** (`shape_jackknife_stable`) flags
+  single-domain dependence (sharp↔diffuse). The MC re-seeds per cluster with the **Mersenne-Twister**
+  pin (as Phase 3) — thread- and order-invariant, and runs after all `perm_p` draws so it does **not**
+  perturb the byte-for-byte `perm_p` parity.
+- **Determinism split:** Part A is RNG-free and always on (parity-safe); Part B is MC → treated
+  distributionally like `perm_p`/`q`, never a byte-parity gate. An `emit_uncertainty: false` toggle
+  reproduces the Phase-5 column contracts byte-for-byte.
+- **No new runtime dependency** (base-R math); `pROC` is a **test-only** cross-check (`Suggests`) of the
+  DeLong CI. **Scope boundary:** these intervals capture rg sampling noise given `rg_se`/VIF only — not
+  ontology error, misspecification, or selection. Complements (does not replace) the across-z
+  `label_stable` robustness flag.
+Gate: every pre-existing column byte-identical to Phase 5; `ci_lo ≤ auc_abs ≤ ci_hi ∈ [0,1]` for every
+row; DeLong CI (VIF=1) matches `pROC::ci.auc("delong")` within 1e-6; positive control C5_sub0 → wide
+AUC CI + `shape_confidence ≈ 1.0` (sharp), negative control C3 → weak with NA focus CI;
+`shape_confidence` thread- & order-invariant; all 13 degenerate edge cases guarded.
+
 ---
 
 ## 13. Risks & mitigations

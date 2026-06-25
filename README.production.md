@@ -36,7 +36,8 @@ not unit tests alone.
 **Phases 1–5 complete — the R engine is a validated drop-in for the Python reference, ingests a
 GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sweep, renders the
 publication-ready figures, and ships as a pinned, self-validating Docker image** (with a Nextflow
-harness that proves the image runs under Nextflow):
+harness that proves the image runs under Nextflow). **Phase 6 (uncertainty quantification) is planned**
+— see item 6 below and [.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md](.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md):
 
 1. **Phase 1 — R engine port + fixture** ✅ — the `R/` modules + the `anchor_map` CLI
    ([inst/scripts/anchor_map.R](inst/scripts/anchor_map.R)), validated by cross-language parity on the
@@ -76,6 +77,24 @@ harness that proves the image runs under Nextflow):
    gate (entrypoint / procps / output capture), `gcp` (Google Batch, spot) is a one-time `USER root` /
    GCS-FUSE check. **Diverges from ADD §7.3 deliberately**: base `4.6.0` not `4.4.2` (match the validated
    env), Nextflow scoped to validation. See [docker/README.md](docker/README.md).
+6. **Phase 6 — AUC confidence intervals + shape confidence** 📋 *planned* — attaches **uncertainty** to
+   the two point estimates that drive every call. **Part A (deterministic):** a 95% CI per AUC via the
+   **DeLong (1988)** nonparametric variance (computed from the placement values already implicit in the
+   midranks — Sun & Xu 2014 fast form), **VIF-inflated** to respect within-category trait correlation
+   (consistent with the existing `vif_z = z/√vif`) and **logit-transformed** to stay in [0,1], with a
+   **Hanley–McNeil (1982)** variance fallback for perfect separation / degenerate groups — new score
+   columns `auc_abs_se`, `auc_abs_ci_lo`, `auc_abs_ci_hi`. (Crux: the existing
+   `var0 = (N+1)/(12·n_in·n_out)` is the *null* variance for the `vif_p` test; a CI needs the
+   *alternative*-hypothesis DeLong variance.) **Part B (Monte-Carlo):** propagate the Part-A per-AUC
+   distributions through the whole `anchor_shape` ruleset `B` times → `shape_confidence` (fraction of
+   draws recovering the point shape), `shape_posterior` (distribution over {weak,sharp,focal,diffuse}),
+   `anchor_focus_ci_lo/hi`, plus a deterministic leave-one-domain-out `shape_jackknife_stable`. The MC
+   re-seeds per cluster with the **Mersenne-Twister** pin (as Phase 3) — thread- and order-invariant —
+   and runs after all `perm_p` draws, so it never perturbs the byte-for-byte `perm_p` parity. **Purely
+   additive** (appended columns; no existing value changes); an `emit_uncertainty: false` toggle restores
+   the Phase-5 contracts byte-for-byte. **No new runtime dependency** (base-R math; `pROC` is a test-only
+   cross-check). Scope: rg sampling noise given `rg_se`/VIF only — not ontology error or
+   misspecification; complements the across-z `label_stable` robustness flag.
 
 The project is **under git** (GitHub: `micpreuss/AnchorMap`, public); the vendored
 `claude-science-scaffold/` subdir is gitignored (it is its own repo).
@@ -98,9 +117,11 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, public); the vendor
     `anchor_eligible=FALSE` categories may be scored but never labeled (the forbidden-FP gate).
 - **Terminal outputs** (`results/<run_label>/`):
   - `category_anchor_scores.tsv` — per `(cluster_label, level, category)`: `n, n_eff, n_hit, rho_bar,
-    vif, auc_abs, auc_signed, perm_p, vif_z, vif_p, pooled_rg [ci], coherence, odds_ratio, fisher_p, q, rank`.
+    vif, auc_abs, auc_signed, perm_p, vif_z, vif_p, pooled_rg [ci], coherence, odds_ratio, fisher_p, q, rank`
+    *(+ `auc_abs_se, auc_abs_ci_lo, auc_abs_ci_hi` appended once Phase 6 lands)*.
   - `cluster_anchor_labels.tsv` — per cluster: `auto_label, anchor_shape, anchor_margin, anchor_focus,
-    n_sig_domains, top_*`, profile.
+    n_sig_domains, top_*`, profile *(+ `shape_confidence, anchor_focus_ci_lo/hi, shape_posterior,
+    shape_jackknife_stable` appended once Phase 6 lands)*.
   - `sensitivity_z_scores.tsv` / `sensitivity_z_labels.tsv` *(Phase 3)* — the two tables above stacked
     across the z-sweep (each + a `z_threshold` column; labels + a per-cluster `label_stable` flag). The
     z = `h2_z_threshold` slice equals the primaries byte-for-byte.
