@@ -1,3 +1,11 @@
+# anchormap 0.1.3
+
+- Added bootstrap AUC confidence intervals for anchor scores, including propagated uncertainty in
+  labels and plots.
+- Added shape-confidence summaries so sharp, diffuse, focal, and weak anchor calls carry explicit
+  uncertainty context.
+- Extended example configs, analysis design notes, and tests for the Phase 6 uncertainty workflow.
+
 # anchormap 0.1.2
 
 - Made ontology input authoritative when same-named columns are also present in the correlation table,

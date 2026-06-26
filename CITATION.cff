@@ -14,7 +14,7 @@ authors:
 license: MIT
 repository-code: "https://github.com/micpreuss/AnchorMap"
 url: "https://github.com/micpreuss/AnchorMap"
-version: "0.1.2"
+version: "0.1.3"
 keywords:
   - statistical-genetics
   - genetic-correlation

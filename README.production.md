@@ -213,7 +213,7 @@ Phase-3 z-sweep — note 1.11.x has a `future.globals` regression that breaks th
 (optional, `n_eff` cross-check). The Phase-4 figures additionally need `ggplot2`, `patchwork`, `scales`,
 `ggrepel` (and optionally `ragg` — `R/plot.R` falls back to cairo when it is absent). The CLI uses
 `optparse`; `testthat` is needed only to run the test suite. **Or skip host R entirely and use the pinned
-image** (`docker run anchormap:0.1.2 …`), which carries the exact validated versions (R 4.6.0,
+image** (`docker run anchormap:0.1.3 …`), which carries the exact validated versions (R 4.6.0,
 `future.apply 1.20.2`, `ggplot2 4.0.3`).
 
 ## Run
@@ -239,10 +239,10 @@ host. The pinned image puts `anchor_map` / `plot_anchors` on `PATH`. `--config` 
 
 ```bash
 # Build the image (THE tool). The build runs two self-tests; it fails if either regresses.
-docker build -t anchormap:0.1.2 -f docker/Dockerfile .          # release: add --platform linux/amd64
+docker build -t anchormap:0.1.3 -f docker/Dockerfile .          # release: add --platform linux/amd64
 
 # Run AnchorMap reproducibly via the image (primary interface; mount cwd as /work):
-docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.2 \
+docker run --rm -v "$PWD:/work" -w /work anchormap:0.1.3 \
   anchor_map --config local/configs/carey_rint15_anthro.yaml --out-dir results/carey_rint15_anthro --threads 4
 
 # Validate the image runs flawlessly UNDER Nextflow (not how you run AnchorMap):
@@ -253,13 +253,13 @@ nextflow run nextflow/main.nf -profile test -params-file nextflow/params/test.ya
 ### Publishing a container release
 
 The [GHCR workflow](.github/workflows/publish-container.yml) builds and publishes the image whenever
-a semantic version tag such as `v0.1.2` is pushed. The tag must match `Version:` in `DESCRIPTION`; the
-workflow publishes both `ghcr.io/micpreuss/anchormap:0.1.2` and `ghcr.io/micpreuss/anchormap:latest`.
+a semantic version tag such as `v0.1.3` is pushed. The tag must match `Version:` in `DESCRIPTION`; the
+workflow publishes both `ghcr.io/micpreuss/anchormap:0.1.3` and `ghcr.io/micpreuss/anchormap:latest`.
 It uses GitHub's built-in `GITHUB_TOKEN`, so no registry secret is required.
 
 ```bash
-git tag -a v0.1.2 -m "AnchorMap 0.1.2"
-git push origin v0.1.2
+git tag -a v0.1.3 -m "AnchorMap 0.1.3"
+git push origin v0.1.3
 ```
 
 After the first successful publication, open the `anchormap` package settings on GitHub and change

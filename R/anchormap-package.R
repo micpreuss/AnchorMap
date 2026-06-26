@@ -14,5 +14,6 @@ NULL
 ## inside ggplot2 aes() and data.table reshapes (they are columns, not globals).
 utils::globalVariables(c(
   "auc_abs", "pooled_rg", "coherence", "category", "cluster_label", "rank", "q",
-  "y", "yend", "a", "n", "sz", "sig", "z", "zmask", "lab", "auto_label", "isauto"
+  "y", "yend", "a", "n", "sz", "sig", "z", "zmask", "lab", "auto_label", "isauto",
+  "ax", "auc_abs_ci_lo", "auc_abs_ci_hi"
 ))
