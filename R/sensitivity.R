@@ -28,14 +28,6 @@ parallel_lapply <- function(X, FUN, threads = 1L) {
   future.apply::future_lapply(X, FUN, future.seed = TRUE, future.globals = FALSE)
 }
 
-# One all-ambiguous label row, byte-matching rank_and_label's empty-cluster branch (label.R:61-67).
-.ambiguous_label_row <- function(cl) {
-  data.frame(cluster_label = cl, auto_label = "ambiguous", anchor_shape = "weak",
-             anchor_margin = NA_real_, anchor_focus = NA_real_, n_sig_domains = 0L,
-             top_auc = NA_real_, top_q = NA_real_, top_pooled_rg = NA_real_,
-             top_coherence = NA_real_, profile = "", stringsAsFactors = FALSE)
-}
-
 #' Score the engine at a single reliability threshold
 #'
 #' Runs the full single-z engine (gate -> redundancy -> score -> label) at one h2-reliability
@@ -114,7 +106,7 @@ run_sensitivity <- function(df, ont, cfg, sroot, z_vector, threads = 1L,
     present <- if (is.null(lab)) character(0) else lab[["cluster_label"]]
     miss <- setdiff(all_clusters, present)
     if (length(miss)) {
-      pad <- do.call(rbind, lapply(miss, .ambiguous_label_row))
+      pad <- do.call(rbind, lapply(miss, ambiguous_label_row, cfg = cfg))
       lab <- if (is.null(lab) || !nrow(lab)) pad else rbind(lab, pad)
     }
     if (is.null(lab)) return(NULL)

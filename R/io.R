@@ -22,7 +22,16 @@ default_config <- function() {
     # ---- Phase 3 (additive) ----
     # z_vector: the h2-reliability thresholds swept for the sensitivity TSVs. The primary z
     # (h2_z_threshold) is always folded in, so the primary slice always exists.
-    z_vector = c(3, 4, 5))
+    z_vector = c(3, 4, 5),
+    # ---- Phase 6 (additive uncertainty quantification) ----
+    # emit_uncertainty: master toggle. TRUE appends the AUC CI (auc_abs_se/ci_lo/ci_hi) and the
+    #   shape-support columns (shape_confidence, anchor_focus_ci_lo/hi, shape_posterior,
+    #   shape_jackknife_stable); FALSE reproduces the Phase-5 contracts byte-for-byte.
+    # auc_ci_method: delong (default, nonparametric) | hanley (closed form). auc_ci_level: CI level.
+    # shape_confidence_B: MC draws for the shape support. shape_confidence_min_sig_frac: min fraction
+    #   of draws with >=1 significant domain required to report a focus CI (else NA).
+    emit_uncertainty = TRUE, auc_ci_method = "delong", auc_ci_level = 0.95,
+    shape_confidence_B = 2000, shape_confidence_min_sig_frac = 0.05)
 }
 
 # Read a YAML config and overlay it on the defaults. `levels` is flattened to a character vector.
@@ -70,6 +79,18 @@ validate_config <- function(cfg) {
 
   if (!length(cfg[["z_vector"]]) || any(!is.finite(cfg[["z_vector"]])) || any(cfg[["z_vector"]] <= 0))
     add("z_vector must be non-empty and all entries finite and > 0")
+
+  # ---- Phase 6 uncertainty block ----
+  if (!is.logical(cfg[["emit_uncertainty"]]) || length(cfg[["emit_uncertainty"]]) != 1L)
+    add("emit_uncertainty must be a single TRUE/FALSE, got %s", cfg[["emit_uncertainty"]])
+  if (!cfg[["auc_ci_method"]] %in% c("delong", "hanley"))
+    add("auc_ci_method must be one of {delong, hanley}, got '%s'", cfg[["auc_ci_method"]])
+  if (!in_unit(cfg[["auc_ci_level"]]) || cfg[["auc_ci_level"]] <= 0 || cfg[["auc_ci_level"]] >= 1)
+    add("auc_ci_level must be in (0,1), got %s", cfg[["auc_ci_level"]])
+  if (!pos_int(cfg[["shape_confidence_B"]]))
+    add("shape_confidence_B must be an integer >= 1, got %s", cfg[["shape_confidence_B"]])
+  if (!in_unit(cfg[["shape_confidence_min_sig_frac"]]))
+    add("shape_confidence_min_sig_frac must be in [0,1], got %s", cfg[["shape_confidence_min_sig_frac"]])
 
   if (length(bad))
     stop("Invalid config:\n  - ", paste(bad, collapse = "\n  - "), call. = FALSE)

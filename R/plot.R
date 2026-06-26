@@ -110,6 +110,10 @@ fig_lollipops <- function(track, row_order, cfg) {
   q_sig <- cfg[["q_sig"]]; k <- cfg[["top_k"]]; cap <- cfg[["rg_cap"]]
   lab_idx <- labels; data.table::setkey(lab_idx, cluster_label)
   clusters <- row_order[row_order %in% unique(s[["cluster_label"]])]
+  # Phase-6 opt-in: surface the AUC CI band + shape_confidence only when those columns are present,
+  # so pre-Phase-6 TSVs (no extra columns) still render byte-identically.
+  has_ci   <- all(c("auc_abs_ci_lo", "auc_abs_ci_hi") %in% names(s))
+  has_conf <- "shape_confidence" %in% names(labels)
 
   panels <- lapply(clusters, function(cl) {
     sub <- s[s[["cluster_label"]] == cl, ]
@@ -119,22 +123,36 @@ fig_lollipops <- function(track, row_order, cfg) {
     sub[["a"]]   <- 0.30 + 0.70 * sub[["coherence"]]
     sub[["sig"]] <- sub[["q"]] < q_sig
     sub[["isauto"]] <- sub[["category"]] == auto
+    sub[["ax"]]  <- pmax(sub[["auc_abs"]], 0.5)                    # enrichment-lead window: a depleted
+                                                                  # (AUC<0.5) domain sits at the baseline,
+                                                                  # never a misleading leftward bar
     lb <- lab_idx[cl]
-    ttl <- sprintf("%s  -  %s [%s]", cl, lb[["auto_label"]], lb[["anchor_shape"]])
-    ggplot(sub) +
+    shp <- as.character(lb[["anchor_shape"]])
+    if (has_conf) {                                              # append the support score to the shape tag
+      cf <- suppressWarnings(as.numeric(lb[["shape_confidence"]]))
+      if (length(cf) == 1L && is.finite(cf)) shp <- sprintf("%s, conf=%.2f", shp, cf)
+    }
+    ttl <- sprintf("%s  -  %s [%s]", cl, lb[["auto_label"]], shp)
+    g <- ggplot(sub) +
       geom_vline(xintercept = 0.5, colour = "grey70", linewidth = 0.3) +
-      geom_segment(aes(x = 0.5, xend = auc_abs, y = y, yend = y, colour = pooled_rg, alpha = a),
-                   linewidth = 1.1) +
-      geom_point(aes(x = auc_abs, y = y, colour = pooled_rg, alpha = a), size = 3) +
-      geom_point(data = sub[sub[["sig"]], ], aes(x = auc_abs, y = y), shape = 21,
+      geom_segment(aes(x = 0.5, xend = ax, y = y, yend = y, colour = pooled_rg, alpha = a),
+                   linewidth = 1.1)
+    if (has_ci)                                                  # thin black 95% AUC CI over the stem,
+      g <- g + geom_errorbar(                                    # clamped to the visible [0.5,1] x-axis
+        aes(y = y, xmin = pmax(auc_abs_ci_lo, 0.5), xmax = pmin(auc_abs_ci_hi, 1.0)),
+        orientation = "y", width = 0.18, colour = "black", linewidth = 0.15)
+    g +
+      geom_point(aes(x = ax, y = y, colour = pooled_rg, alpha = a), size = 3) +
+      geom_point(data = sub[sub[["sig"]], ], aes(x = ax, y = y), shape = 21,
                  fill = NA, colour = "black", size = 3.4, stroke = 0.7) +
-      geom_point(data = sub[sub[["isauto"]], ], aes(x = auc_abs, y = y), shape = 8,
+      geom_point(data = sub[sub[["isauto"]], ], aes(x = ax, y = y), shape = 8,
                  colour = "black", size = 3, stroke = 0.6) +
       geom_text(aes(x = 0.508, y = y + 0.34, label = .short(category)),
                 hjust = 0, vjust = 0.5, size = 2.0) +
-      geom_text(aes(x = pmin(auc_abs + 0.008, 0.995), y = y, label = paste0("n", n)),
-                hjust = 0, vjust = 0.5, size = 1.7, colour = "grey45") +
-      scale_x_continuous(limits = c(0.5, 1.0), name = "AUC (in- vs out-category rank enrichment)") +
+      geom_text(aes(x = 0.495, y = y, label = n),                  # in-set size, in the left gutter
+                hjust = 1, vjust = 0.5, size = 1.7, colour = "grey45") +
+      scale_x_continuous(limits = c(0.46, 1.0), breaks = seq(0.5, 1.0, 0.1),
+                         name = "AUC (in- vs out-category rank enrichment)") +
       scale_y_continuous(limits = c(0.4, nrow(sub) + 0.8)) +
       make_rg_colour(cap) + scale_alpha_identity() +
       ggtitle(ttl) +
@@ -143,11 +161,12 @@ fig_lollipops <- function(track, row_order, cfg) {
             panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(),
             plot.title = element_text(size = 7.5), legend.position = "none")
   })
+  note <- if (has_ci) "; black bar = 95% AUC CI" else ""
   pw <- patchwork::wrap_plots(panels, ncol = cfg[["lollipop_ncols"]]) +
     patchwork::plot_layout(guides = "collect") +
     patchwork::plot_annotation(title = sprintf(
-      "Cluster anchoring - %s track (AUC lead; colour = signed rg, alpha = coherence, ring = q<%.2g)",
-      track[["name"]], q_sig))
+      "Cluster anchoring - %s track (AUC lead; colour = signed rg, alpha = coherence, ring = q<%.2g%s)",
+      track[["name"]], q_sig, note))
   pw & theme(legend.position = "right")
 }
 

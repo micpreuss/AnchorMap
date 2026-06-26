@@ -21,6 +21,9 @@ score_cluster_level <- function(gc, level, corr, cfg) {
   min_n <- as.numeric(cfg[["min_category_n"]])
   if (N < min_n * 2) return(list())
   K <- as.integer(cfg[["permutation_K"]])
+  emit_unc <- isTRUE(cfg[["emit_uncertainty"]])              # Phase 6: append AUC CI columns
+  ci_method <- if (is.null(cfg[["auc_ci_method"]])) "delong" else cfg[["auc_ci_method"]]
+  ci_level  <- if (is.null(cfg[["auc_ci_level"]]))  0.95     else as.numeric(cfg[["auc_ci_level"]])
 
   rv <- as.numeric(gc[[cfg[["rank_variable"]]]])
   ranks_abs    <- rank(rv,             ties.method = "average")
@@ -74,7 +77,7 @@ score_cluster_level <- function(gc, level, corr, cfg) {
     odds <- (tp * tn) / (fn * fp)                               # scipy sample OR, NOT conditional MLE
     odds_out <- if (is.finite(odds)) round(odds, 3) else Inf
 
-    rows[[length(rows) + 1L]] <- data.frame(
+    row <- data.frame(
       cluster_label = gc[["cluster_label"]][1], level = level, category = cat,
       eligible = all(gc[["anchor_eligible"]][inmask]),
       n = n_in, n_eff = round(m_eff, 2), n_hit = tp,
@@ -87,6 +90,14 @@ score_cluster_level <- function(gc, level, corr, cfg) {
       mean_abs_rg = round(mean_abs, 4), mean_signed_rg = round(mean_signed, 4),
       odds_ratio = odds_out, fisher_p = fisher_p,
       stringsAsFactors = FALSE)
+
+    if (emit_unc) {                                             # Phase 6 Part A: VIF-inflated DeLong CI
+      ci <- auc_ci(ranks_abs, rv, inmask, n_in, n_out, auc_abs, vif, ci_method, ci_level)
+      row[["auc_abs_se"]]    <- ci[["se"]]                      # full precision (matches perm_p/q style)
+      row[["auc_abs_ci_lo"]] <- round(ci[["lo"]], 4)
+      row[["auc_abs_ci_hi"]] <- round(ci[["hi"]], 4)
+    }
+    rows[[length(rows) + 1L]] <- row
   }
   rows
 }

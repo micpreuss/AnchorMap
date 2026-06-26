@@ -48,3 +48,10 @@ label_auc_min: 0.60
 shape_margin_sharp: 0.10
 shape_margin_diffuse: 0.05
 shape_focus_diffuse: 3.0
+
+# ---- Phase 6: uncertainty quantification (additive) ----
+emit_uncertainty: true        # false -> legacy Phase-5 column contracts (byte-for-byte parity)
+auc_ci_method: delong         # delong (nonparametric) | hanley (closed form)
+auc_ci_level: 0.95
+shape_confidence_B: 2000      # MC draws for the shape-support score
+shape_confidence_min_sig_frac: 0.05

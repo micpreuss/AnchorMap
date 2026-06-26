@@ -446,10 +446,13 @@ Goal: shippable, reproducible container + process.
 Deliverables: ✅ pinned `Dockerfile` (procps, USER root, ENTRYPOINT [], P3M snapshot, smoke test); ✅ DSL2 `ANCHORMAP` process + `nextflow.config`; ✅ log with `FINISHED`.
 Gate: image builds; smoke test passes; end-to-end Nextflow run on the fixture produces all outputs (primary + sensitivity TSVs, figures, log).
 
-**Phase 6 — AUC confidence intervals + shape confidence. 📋 PLANNED.**
+**Phase 6 — AUC confidence intervals + shape confidence. ✅ BUILT.**
 Goal: attach **uncertainty** to the two point estimates that drive every call — the competitive AUC and
 the inverse-Simpson `anchor_focus` that decides `anchor_shape`. Purely additive (appended columns;
-**no existing value changes**); plan in [.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md](.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md).
+**no existing value changes**); built per [.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md](.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md)
+in [R/uncertainty.R](R/uncertainty.R) (math), [R/score.R](R/score.R) (Part A), [R/label.R](R/label.R)
+(Part B), wired through [R/run_anchormap.R](R/run_anchormap.R)/[R/sensitivity.R](R/sensitivity.R) and
+surfaced on the lollipops in [R/plot.R](R/plot.R); validated by [tests/testthat/test-uncertainty.R](tests/testthat/test-uncertainty.R).
 
 - **Part A — AUC CI (deterministic).** Per-AUC 95% CI via the **DeLong (1988)** nonparametric variance
   computed from the placement values already implicit in the midranks (Sun & Xu 2014 fast form), **VIF-
@@ -459,8 +462,9 @@ the inverse-Simpson `anchor_focus` that decides `anchor_shape`. Purely additive 
   DeLong's variance collapses to 0. Crux: the existing `var0 = (N+1)/(12·n_in·n_out)` is the **null**
   (H₀: AUC=0.5) variance for the `vif_p` test — the CI needs the **alternative**-hypothesis (DeLong)
   variance. New score columns: `auc_abs_se`, `auc_abs_ci_lo`, `auc_abs_ci_hi`.
-- **Part B — shape confidence (Monte-Carlo).** Propagate the Part-A per-AUC distributions (logit-normal,
-  VIF-inflated SE) through the **entire** `anchor_shape` ruleset `B` times; report `shape_confidence` =
+- **Part B — shape confidence (Monte-Carlo).** Propagate the Part-A per-AUC distributions (Gaussian on
+  the AUC scale, mean `auc_abs`, SD = the Part-A `auc_abs_se`, clamped to [0,1]) through the **entire**
+  `anchor_shape` ruleset `B` times; report `shape_confidence` =
   fraction of draws recovering the point shape (a Felsenstein-style bootstrap support / posterior over
   {weak,sharp,focal,diffuse} in `shape_posterior`), plus `anchor_focus_ci_lo/hi`. MC is needed (not a
   closed-form `focus` CI) because the verdict crosses the `n_sig`/`margin`/`focus` thresholds

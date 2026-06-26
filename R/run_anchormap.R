@@ -7,6 +7,11 @@
                  "fisher_p","q","rank")
 .LABEL_COLS <- c("cluster_label","auto_label","anchor_shape","anchor_margin","anchor_focus",
                  "n_sig_domains","top_auc","top_q","top_pooled_rg","top_coherence","profile")
+# Phase-6 uncertainty columns, APPENDED at the end of each contract when emit_uncertainty is set
+# (legacy Phase-5 contracts otherwise — the byte-for-byte parity / Docker self-test escape hatch).
+.UNC_SCORE_COLS <- c("auc_abs_se","auc_abs_ci_lo","auc_abs_ci_hi")
+.UNC_LABEL_COLS <- c("shape_confidence","anchor_focus_ci_lo","anchor_focus_ci_hi",
+                     "shape_posterior","shape_jackknife_stable")
 # Sensitivity contracts: primary cols + z_threshold (+ label_stable for the labels table).
 .SENS_SCORE_COLS <- c(.SCORE_COLS, "z_threshold")
 .SENS_LABEL_COLS <- c(.LABEL_COLS, "z_threshold", "label_stable")
@@ -115,11 +120,20 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
   if (is.null(prim[["ranked"]]) || !nrow(prim[["ranked"]]))
     stop("No category scores produced at the primary z - check gate thresholds / input.")
 
-  # ---- primary TSVs (exact .SCORE_COLS/.LABEL_COLS contract) ----
+  # ---- output contracts: Phase-5 base cols + Phase-6 uncertainty cols when emit_uncertainty ----
+  emit_unc    <- isTRUE(cfg[["emit_uncertainty"]])
+  score_cols  <- if (emit_unc) c(.SCORE_COLS, .UNC_SCORE_COLS) else .SCORE_COLS
+  label_cols  <- if (emit_unc) c(.LABEL_COLS, .UNC_LABEL_COLS) else .LABEL_COLS
+  sens_score_cols <- c(score_cols, "z_threshold")
+  sens_label_cols <- c(label_cols, "z_threshold", "label_stable")
+
+  # ---- primary TSVs (exact score_cols/label_cols contract) ----
   ranked <- prim[["ranked"]]; labels <- prim[["labels"]]
-  ranked <- ranked[order(ranked[["level"]], ranked[["cluster_label"]], ranked[["rank"]]), .SCORE_COLS]
+  ranked <- ranked[order(ranked[["level"]], ranked[["cluster_label"]], ranked[["rank"]]), score_cols]
   ranked[["eligible"]] <- ifelse(ranked[["eligible"]], "True", "False")   # match pandas bool repr
-  labels <- labels[order(labels[["cluster_label"]]), .LABEL_COLS]
+  labels <- labels[order(labels[["cluster_label"]]), label_cols]
+  if (emit_unc)                                                            # pandas bool repr, like eligible
+    labels[["shape_jackknife_stable"]] <- ifelse(labels[["shape_jackknife_stable"]], "True", "False")
   scores_path <- file.path(out_dir, "category_anchor_scores.tsv")
   labels_path <- file.path(out_dir, "cluster_anchor_labels.tsv")
   data.table::fwrite(ranked, scores_path, sep = "\t", na = "", quote = FALSE)
@@ -129,11 +143,13 @@ run_anchormap <- function(config_path, threads = 1L, rds = NULL, z_vector = NULL
 
   # ---- sensitivity TSVs (.SENS_* contracts: primary cols + z_threshold [+ label_stable]) ----
   ss <- sw[["scores"]]
-  ss <- ss[order(ss[["z_threshold"]], ss[["level"]], ss[["cluster_label"]], ss[["rank"]]), .SENS_SCORE_COLS]
+  ss <- ss[order(ss[["z_threshold"]], ss[["level"]], ss[["cluster_label"]], ss[["rank"]]), sens_score_cols]
   ss[["eligible"]] <- ifelse(ss[["eligible"]], "True", "False")
   sl <- sw[["labels"]]
-  sl <- sl[order(sl[["z_threshold"]], sl[["cluster_label"]]), .SENS_LABEL_COLS]
+  sl <- sl[order(sl[["z_threshold"]], sl[["cluster_label"]]), sens_label_cols]
   sl[["label_stable"]] <- ifelse(sl[["label_stable"]], "True", "False")
+  if (emit_unc)
+    sl[["shape_jackknife_stable"]] <- ifelse(sl[["shape_jackknife_stable"]], "True", "False")
   sens_scores_path <- file.path(out_dir, "sensitivity_z_scores.tsv")
   sens_labels_path <- file.path(out_dir, "sensitivity_z_labels.tsv")
   data.table::fwrite(ss, sens_scores_path, sep = "\t", na = "", quote = FALSE)

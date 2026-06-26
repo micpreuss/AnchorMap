@@ -58,3 +58,13 @@ label_auc_min: 0.60
 shape_margin_sharp: 0.10
 shape_margin_diffuse: 0.05
 shape_focus_diffuse: 3.0
+
+# ---- Phase 6: uncertainty quantification (additive) ----
+# Appends a redundancy-aware 95% CI to every AUC (auc_abs_se/ci_lo/ci_hi) and a Monte-Carlo support
+# score to every anchor-shape call (shape_confidence, anchor_focus_ci_lo/hi, shape_posterior,
+# shape_jackknife_stable). Set emit_uncertainty: false to reproduce the Phase-5 contracts exactly.
+emit_uncertainty: true
+auc_ci_method: delong         # delong (nonparametric) | hanley (closed form)
+auc_ci_level: 0.95
+shape_confidence_B: 2000      # MC draws for the shape-support score
+shape_confidence_min_sig_frac: 0.05

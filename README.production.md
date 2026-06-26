@@ -36,7 +36,7 @@ not unit tests alone.
 **Phases 1–5 complete — the R engine is a validated drop-in for the Python reference, ingests a
 GenomicSEM `.rds` directly, runs a parallel reliability-threshold sensitivity sweep, renders the
 publication-ready figures, and ships as a pinned, self-validating Docker image** (with a Nextflow
-harness that proves the image runs under Nextflow). **Phase 6 (uncertainty quantification) is planned**
+harness that proves the image runs under Nextflow). **Phase 6 (uncertainty quantification) is built**
 — see item 6 below and [.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md](.agents/plans/anchormap-phase6-auc-ci-shape-confidence.md):
 
 1. **Phase 1 — R engine port + fixture** ✅ — the `R/` modules + the `anchor_map` CLI
@@ -77,7 +77,8 @@ harness that proves the image runs under Nextflow). **Phase 6 (uncertainty quant
    gate (entrypoint / procps / output capture), `gcp` (Google Batch, spot) is a one-time `USER root` /
    GCS-FUSE check. **Diverges from ADD §7.3 deliberately**: base `4.6.0` not `4.4.2` (match the validated
    env), Nextflow scoped to validation. See [docker/README.md](docker/README.md).
-6. **Phase 6 — AUC confidence intervals + shape confidence** 📋 *planned* — attaches **uncertainty** to
+6. **Phase 6 — AUC confidence intervals + shape confidence** ✅ ([R/uncertainty.R](R/uncertainty.R),
+   validated by [tests/testthat/test-uncertainty.R](tests/testthat/test-uncertainty.R)) — attaches **uncertainty** to
    the two point estimates that drive every call. **Part A (deterministic):** a 95% CI per AUC via the
    **DeLong (1988)** nonparametric variance (computed from the placement values already implicit in the
    midranks — Sun & Xu 2014 fast form), **VIF-inflated** to respect within-category trait correlation
@@ -86,7 +87,9 @@ harness that proves the image runs under Nextflow). **Phase 6 (uncertainty quant
    columns `auc_abs_se`, `auc_abs_ci_lo`, `auc_abs_ci_hi`. (Crux: the existing
    `var0 = (N+1)/(12·n_in·n_out)` is the *null* variance for the `vif_p` test; a CI needs the
    *alternative*-hypothesis DeLong variance.) **Part B (Monte-Carlo):** propagate the Part-A per-AUC
-   distributions through the whole `anchor_shape` ruleset `B` times → `shape_confidence` (fraction of
+   distributions (Gaussian on the AUC scale, SD = `auc_abs_se`, clamped to [0,1] — robust at the
+   perfect-separation boundary where a logit-scale SD degenerates) through the whole `anchor_shape`
+   ruleset `B` times → `shape_confidence` (fraction of
    draws recovering the point shape), `shape_posterior` (distribution over {weak,sharp,focal,diffuse}),
    `anchor_focus_ci_lo/hi`, plus a deterministic leave-one-domain-out `shape_jackknife_stable`. The MC
    re-seeds per cluster with the **Mersenne-Twister** pin (as Phase 3) — thread- and order-invariant —
@@ -118,10 +121,10 @@ The project is **under git** (GitHub: `micpreuss/AnchorMap`, public); the vendor
 - **Terminal outputs** (`results/<run_label>/`):
   - `category_anchor_scores.tsv` — per `(cluster_label, level, category)`: `n, n_eff, n_hit, rho_bar,
     vif, auc_abs, auc_signed, perm_p, vif_z, vif_p, pooled_rg [ci], coherence, odds_ratio, fisher_p, q, rank`
-    *(+ `auc_abs_se, auc_abs_ci_lo, auc_abs_ci_hi` appended once Phase 6 lands)*.
+    *(+ `auc_abs_se, auc_abs_ci_lo, auc_abs_ci_hi` appended by Phase 6 when `emit_uncertainty: true`)*.
   - `cluster_anchor_labels.tsv` — per cluster: `auto_label, anchor_shape, anchor_margin, anchor_focus,
     n_sig_domains, top_*`, profile *(+ `shape_confidence, anchor_focus_ci_lo/hi, shape_posterior,
-    shape_jackknife_stable` appended once Phase 6 lands)*.
+    shape_jackknife_stable` appended by Phase 6 when `emit_uncertainty: true`)*.
   - `sensitivity_z_scores.tsv` / `sensitivity_z_labels.tsv` *(Phase 3)* — the two tables above stacked
     across the z-sweep (each + a `z_threshold` column; labels + a per-cluster `label_stable` flag). The
     z = `h2_z_threshold` slice equals the primaries byte-for-byte.
